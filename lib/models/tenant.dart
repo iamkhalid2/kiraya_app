@@ -1,11 +1,29 @@
-class Tenant {
-  final int? id;
-  final String name;
-  final String roomNumber;
-  final double rentAmount;
-  final String paymentStatus;
-  final String phoneNumber;
-  final DateTime lastPaymentDate;
+import 'package:hive/hive.dart';
+
+part 'tenant.g.dart';
+
+@HiveType(typeId: 0)
+class Tenant extends HiveObject {
+  @HiveField(0)
+  int? id;
+
+  @HiveField(1)
+  String name;
+
+  @HiveField(2)
+  String roomNumber;
+
+  @HiveField(3)
+  double rentAmount;
+
+  @HiveField(4)
+  String paymentStatus;
+
+  @HiveField(5)
+  String phoneNumber;
+
+  @HiveField(6)
+  DateTime lastPaymentDate;
 
   Tenant({
     this.id,
@@ -34,7 +52,7 @@ class Tenant {
       id: map['id'],
       name: map['name'],
       roomNumber: map['roomNumber'],
-      rentAmount: map['rentAmount'],
+      rentAmount: map['rentAmount'].toDouble(),
       paymentStatus: map['paymentStatus'],
       phoneNumber: map['phoneNumber'],
       lastPaymentDate: DateTime.parse(map['lastPaymentDate']),

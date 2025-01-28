@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/tenant.dart';
-import '../services/database_helper.dart';
+import '../services/hive_database.dart';
 
 class TenantProvider with ChangeNotifier {
   List<Tenant> _tenants = [];
@@ -21,7 +21,7 @@ class TenantProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _tenants = await DatabaseHelper.instance.getAllTenants();
+      _tenants = await HiveDatabase.instance.getAllTenants();
     } catch (e) {
       debugPrint('Error loading tenants: $e');
     } finally {
@@ -35,7 +35,7 @@ class TenantProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final newTenant = await DatabaseHelper.instance.create(tenant);
+      final newTenant = await HiveDatabase.instance.create(tenant);
       _tenants.add(newTenant);
     } catch (e) {
       debugPrint('Error adding tenant: $e');
@@ -50,7 +50,7 @@ class TenantProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await DatabaseHelper.instance.update(tenant);
+      await HiveDatabase.instance.update(tenant);
       final index = _tenants.indexWhere((t) => t.id == tenant.id);
       if (index != -1) {
         _tenants[index] = tenant;
@@ -68,7 +68,7 @@ class TenantProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await DatabaseHelper.instance.delete(id);
+      await HiveDatabase.instance.delete(id);
       _tenants.removeWhere((tenant) => tenant.id == id);
     } catch (e) {
       debugPrint('Error deleting tenant: $e');
