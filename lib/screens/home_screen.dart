@@ -111,26 +111,33 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '₹${tenant.rentAmount.toStringAsFixed(0)}',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Chip(
-              label: Text(
-                tenant.paymentStatus,
-                style: TextStyle(
-                  color: statusColor,
-                  fontSize: 12,
+        trailing: SizedBox(
+          width: 80,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '₹${tenant.rentAmount.toStringAsFixed(0)}',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  tenant.paymentStatus,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 11,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
-              backgroundColor: statusColor.withOpacity(0.1),
-              padding: EdgeInsets.zero,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-          ],
+            ],
+          ),
         ),
         onTap: () {
           Navigator.push(

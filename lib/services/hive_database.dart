@@ -17,8 +17,14 @@ class HiveDatabase {
 
   Future<Tenant> create(Tenant tenant) async {
     try {
-      final id = await _tenantsBox!.add(tenant);
-      tenant.id = id;
+      // Get the next available ID
+      int nextId = 1;
+      if (_tenantsBox!.isNotEmpty) {
+        final lastTenant = _tenantsBox!.values.last;
+        nextId = (lastTenant.id ?? 0) + 1;
+      }
+      tenant.id = nextId;
+      await _tenantsBox!.put(nextId.toString(), tenant);
       return tenant;
     } catch (e) {
       debugPrint('Error creating tenant: $e');
@@ -37,7 +43,7 @@ class HiveDatabase {
 
   Future<Tenant?> getTenant(int id) async {
     try {
-      return _tenantsBox!.get(id);
+      return _tenantsBox!.get(id.toString());
     } catch (e) {
       debugPrint('Error getting tenant: $e');
       return null;
@@ -46,7 +52,9 @@ class HiveDatabase {
 
   Future<void> update(Tenant tenant) async {
     try {
-      await _tenantsBox!.put(tenant.id, tenant);
+      if (tenant.id != null) {
+        await _tenantsBox!.put(tenant.id.toString(), tenant);
+      }
     } catch (e) {
       debugPrint('Error updating tenant: $e');
       rethrow;
@@ -55,7 +63,7 @@ class HiveDatabase {
 
   Future<void> delete(int id) async {
     try {
-      await _tenantsBox!.delete(id);
+      await _tenantsBox!.delete(id.toString());
     } catch (e) {
       debugPrint('Error deleting tenant: $e');
       rethrow;

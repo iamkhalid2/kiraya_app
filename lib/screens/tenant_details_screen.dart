@@ -11,27 +11,37 @@ class TenantDetailsScreen extends StatelessWidget {
 
   const TenantDetailsScreen({super.key, required this.tenant});
 
-  Future<void> _makePhoneCall(String phoneNumber) async {
-    final Uri launchUri = Uri(
-      scheme: 'tel',
-      path: phoneNumber,
-    );
-    if (await canLaunchUrl(launchUri)) {
-      await launchUrl(launchUri);
-    } else {
-      debugPrint('Could not launch $launchUri');
+  Future<void> _makePhoneCall(BuildContext context, String phoneNumber) async {
+    try {
+      final Uri launchUri = Uri(
+        scheme: 'tel',
+        path: phoneNumber,
+      );
+      await launchUrl(launchUri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('Could not launch phone call: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not make phone call')),
+        );
+      }
     }
   }
 
-  Future<void> _sendSMS(String phoneNumber) async {
-    final Uri launchUri = Uri(
-      scheme: 'sms',
-      path: phoneNumber,
-    );
-    if (await canLaunchUrl(launchUri)) {
-      await launchUrl(launchUri);
-    } else {
-      debugPrint('Could not launch $launchUri');
+  Future<void> _sendSMS(BuildContext context, String phoneNumber) async {
+    try {
+      final Uri launchUri = Uri(
+        scheme: 'sms',
+        path: phoneNumber,
+      );
+      await launchUrl(launchUri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('Could not launch SMS: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not send SMS')),
+        );
+      }
     }
   }
 
@@ -47,11 +57,15 @@ class TenantDetailsScreen extends StatelessWidget {
             child: const Text('CANCEL'),
           ),
           TextButton(
-            onPressed: () {
-              Provider.of<TenantProvider>(context, listen: false)
-                  .deleteTenant(tenant.id!);
-              Navigator.of(ctx).pop();
-              Navigator.of(context).pop();
+            onPressed: () async {
+              if (tenant.id != null) {
+                await Provider.of<TenantProvider>(context, listen: false)
+                    .deleteTenant(tenant.id!);
+                if (context.mounted) {
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).pop();
+                }
+              }
             },
             child: const Text('DELETE'),
           ),
@@ -157,7 +171,7 @@ class TenantDetailsScreen extends StatelessWidget {
                     ListTile(
                       title: const Text('Phone Number'),
                       trailing: Text(tenant.phoneNumber),
-                      onTap: () => _makePhoneCall(tenant.phoneNumber),
+                      onTap: () => _makePhoneCall(context, tenant.phoneNumber),
                     ),
                   ],
                 ),
@@ -169,7 +183,7 @@ class TenantDetailsScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => _makePhoneCall(tenant.phoneNumber),
+                      onPressed: () => _makePhoneCall(context, tenant.phoneNumber),
                       icon: const Icon(Icons.phone),
                       label: const Text('Call'),
                     ),
@@ -177,7 +191,7 @@ class TenantDetailsScreen extends StatelessWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => _sendSMS(tenant.phoneNumber),
+                      onPressed: () => _sendSMS(context, tenant.phoneNumber),
                       icon: const Icon(Icons.message),
                       label: const Text('Message'),
                     ),

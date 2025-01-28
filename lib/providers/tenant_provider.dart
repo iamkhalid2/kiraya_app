@@ -68,10 +68,16 @@ class TenantProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await HiveDatabase.instance.delete(id);
+      // First remove from list to update UI immediately
       _tenants.removeWhere((tenant) => tenant.id == id);
+      notifyListeners();
+      
+      // Then delete from database
+      await HiveDatabase.instance.delete(id);
     } catch (e) {
       debugPrint('Error deleting tenant: $e');
+      // If deletion fails, reload tenants to restore state
+      await loadTenants();
     } finally {
       _isLoading = false;
       notifyListeners();
