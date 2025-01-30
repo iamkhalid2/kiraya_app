@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'providers/tenant_provider.dart';
-import 'screens/home_screen.dart';
+import 'providers/complaint_provider.dart';
+import 'providers/navigation_provider.dart';
+import 'screens/main_screen.dart';
 import 'services/hive_database.dart';
 
 void main() async {
@@ -16,10 +18,14 @@ class RentManagementApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => TenantProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => TenantProvider()),
+        ChangeNotifierProvider(create: (_) => ComplaintProvider()),
+        ChangeNotifierProvider(create: (_) => NavigationProvider()),
+      ],
       child: MaterialApp(
-        title: '  Dashboard',
+        title: 'Kiraya',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           primarySwatch: Colors.blue,
@@ -32,7 +38,7 @@ class RentManagementApp extends StatelessWidget {
             elevation: 2,
           ),
         ),
-        home: const HomeScreen(),
+        home: const MainScreen(),
       ),
     );
   }

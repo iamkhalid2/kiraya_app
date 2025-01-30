@@ -1,29 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../providers/tenant_provider.dart';
 import '../models/tenant.dart';
 import 'tenant_form_screen.dart';
 import 'tenant_details_screen.dart';
-import 'package:intl/intl.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class TenantListScreen extends StatefulWidget {
+  const TenantListScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<TenantListScreen> createState() => _TenantListScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _TenantListScreenState extends State<TenantListScreen> {
   final _searchController = TextEditingController();
   bool _isSearching = false;
-
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(
-      () => Provider.of<TenantProvider>(context, listen: false).loadTenants(),
-    );
-  }
 
   @override
   void dispose() {
@@ -114,7 +106,6 @@ class _HomeScreenState extends State<HomeScreen> {
         trailing: SizedBox(
           width: 80,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
@@ -153,74 +144,36 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search tenants...',
-                  border: InputBorder.none,
+    return Consumer<TenantProvider>(
+      builder: (context, tenantProvider, child) {
+        final tenants = tenantProvider.tenants;
+
+        Widget body;
+        if (tenantProvider.isLoading) {
+          body = const Center(child: CircularProgressIndicator());
+        } else if (tenants.isEmpty) {
+          body = Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.person_outline,
+                  size: 64,
+                  color: Colors.grey[400],
                 ),
-                onChanged: (value) {
-                  Provider.of<TenantProvider>(context, listen: false)
-                      .setSearchQuery(value);
-                },
-              )
-            : const Text('Rent Management'),
-        actions: [
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
-            onPressed: () {
-              setState(() {
-                if (_isSearching) {
-                  _searchController.clear();
-                  Provider.of<TenantProvider>(context, listen: false)
-                      .clearSearchQuery();
-                }
-                _isSearching = !_isSearching;
-              });
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () => _showFilterOptions(context),
-          ),
-        ],
-      ),
-      body: Consumer<TenantProvider>(
-        builder: (context, tenantProvider, child) {
-          if (tenantProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final tenants = tenantProvider.tenants;
-
-          if (tenants.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.person_outline,
-                    size: 64,
-                    color: Colors.grey[400],
+                const SizedBox(height: 16),
+                Text(
+                  'No tenants found',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.grey[600],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No tenants found',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
+                ),
+              ],
+            ),
+          );
+        } else {
+          body = RefreshIndicator(
             onRefresh: () => tenantProvider.loadTenants(),
             child: ListView.builder(
               itemCount: tenants.length,
@@ -228,19 +181,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildTenantCard(context, tenants[index]),
             ),
           );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const TenantFormScreen(),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
+        }
+
+        return Scaffold(
+          body: body,
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TenantFormScreen(),
+                ),
+              );
+            },
+            child: const Icon(Icons.add),
+          ),
+        );
+      },
     );
   }
 }

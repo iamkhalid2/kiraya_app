@@ -16,6 +16,20 @@ dependencies:
   provider: ^6.1.1
   intl: ^0.18.1
   url_launcher: ^6.2.2
+  # Navigation & UI
+  google_nav_bar: ^5.0.6
+  animations: ^2.0.8
+  # Dashboard
+  fl_chart: ^0.65.0
+  countup: ^0.1.4
+  flutter_staggered_grid_view: ^0.7.0
+  shimmer: ^3.0.0
+  # Complaints Feature
+  file_picker: ^6.1.1
+  timeago: ^3.6.0
+  flutter_slidable: ^3.0.0
+  # Utils
+  collection: ^1.18.0
 
 dev_dependencies:
   flutter_test:

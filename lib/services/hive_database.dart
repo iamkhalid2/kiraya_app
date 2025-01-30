@@ -1,18 +1,28 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/tenant.dart';
+import '../models/complaint.dart';
 
 class HiveDatabase {
   static const String _tenantsBoxName = 'tenants';
+  static const String _complaintsBoxName = 'complaints';
   static final HiveDatabase instance = HiveDatabase._init();
+  
   Box<Tenant>? _tenantsBox;
+  Box<Complaint>? _complaintsBox;
 
   HiveDatabase._init();
 
   Future<void> initialize() async {
     await Hive.initFlutter();
+    
+    // Register adapters
     Hive.registerAdapter(TenantAdapter());
+    Hive.registerAdapter(ComplaintAdapter());
+    
+    // Open boxes
     _tenantsBox = await Hive.openBox<Tenant>(_tenantsBoxName);
+    _complaintsBox = await Hive.openBox<Complaint>(_complaintsBoxName);
   }
 
   Future<Tenant> create(Tenant tenant) async {
@@ -83,7 +93,63 @@ class HiveDatabase {
     }
   }
 
+  // Complaint Methods
+  Future<Complaint> createComplaint(Complaint complaint) async {
+    try {
+      int nextId = 1;
+      if (_complaintsBox!.isNotEmpty) {
+        final lastComplaint = _complaintsBox!.values.last;
+        nextId = (lastComplaint.id ?? 0) + 1;
+      }
+      complaint.id = nextId;
+      await _complaintsBox!.put(nextId.toString(), complaint);
+      return complaint;
+    } catch (e) {
+      debugPrint('Error creating complaint: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Complaint>> getAllComplaints() async {
+    try {
+      return _complaintsBox!.values.toList();
+    } catch (e) {
+      debugPrint('Error getting complaints: $e');
+      return [];
+    }
+  }
+
+  Future<Complaint?> getComplaint(int id) async {
+    try {
+      return _complaintsBox!.get(id.toString());
+    } catch (e) {
+      debugPrint('Error getting complaint: $e');
+      return null;
+    }
+  }
+
+  Future<void> updateComplaint(Complaint complaint) async {
+    try {
+      if (complaint.id != null) {
+        await _complaintsBox!.put(complaint.id.toString(), complaint);
+      }
+    } catch (e) {
+      debugPrint('Error updating complaint: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteComplaint(int id) async {
+    try {
+      await _complaintsBox!.delete(id.toString());
+    } catch (e) {
+      debugPrint('Error deleting complaint: $e');
+      rethrow;
+    }
+  }
+
   Future<void> close() async {
     await _tenantsBox?.close();
+    await _complaintsBox?.close();
   }
 }
