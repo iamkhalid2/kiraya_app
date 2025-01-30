@@ -19,7 +19,7 @@ class RentManagementApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => TenantProvider(),
       child: MaterialApp(
-        title: 'Kiraya',
+        title: '  Dashboard',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           primarySwatch: Colors.blue,
