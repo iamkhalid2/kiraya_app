@@ -12,44 +12,52 @@ class ComplaintsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ComplaintProvider>(
       builder: (context, complaintProvider, child) {
-        if (complaintProvider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        return StreamBuilder<List<Complaint>>(
+          stream: complaintProvider.complaintsStream,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-        final complaints = complaintProvider.complaints;
+            if (snapshot.hasError) {
+              return Center(
+                child: Text('Error: ${snapshot.error}'),
+              );
+            }
 
-        if (complaints.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.report_off,
-                  size: 64,
-                  color: Colors.grey[400],
+            final complaints = complaintProvider.complaints;
+
+            if (complaints.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.report_off,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No complaints found',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'No complaints found',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
+              );
+            }
 
-        return RefreshIndicator(
-          onRefresh: () => complaintProvider.loadComplaints(),
-          child: ListView.builder(
-            itemCount: complaints.length,
-            itemBuilder: (context, index) {
-              final complaint = complaints[index];
-              return _buildComplaintCard(context, complaint, complaintProvider);
-            },
-          ),
+            return ListView.builder(
+              itemCount: complaints.length,
+              itemBuilder: (context, index) {
+                final complaint = complaints[index];
+                return _buildComplaintCard(context, complaint, complaintProvider);
+              },
+            );
+          },
         );
       },
     );

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'providers/tenant_provider.dart';
 import 'providers/complaint_provider.dart';
 import 'providers/navigation_provider.dart';
+import 'providers/auth_provider.dart';
 import 'screens/main_screen.dart';
-import 'services/hive_database.dart';
+import 'screens/auth_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await HiveDatabase.instance.initialize();
+  await Firebase.initializeApp();
   runApp(const RentManagementApp());
 }
 
@@ -19,6 +21,7 @@ class RentManagementApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TenantProvider()),
         ChangeNotifierProvider(create: (_) => ComplaintProvider()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
@@ -37,7 +40,7 @@ class RentManagementApp extends StatelessWidget {
             elevation: 2,
           ),
         ),
-        home: const MainScreen(),
+        home: const AuthWrapper(),
       ),
     );
   }

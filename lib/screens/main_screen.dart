@@ -31,11 +31,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize data
-    Future.microtask(() {
-      context.read<TenantProvider>().loadTenants();
-      context.read<ComplaintProvider>().loadComplaints();
-    });
+    // No initialization needed - using streams
   }
 
   @override

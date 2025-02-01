@@ -146,45 +146,53 @@ class _TenantListScreenState extends State<TenantListScreen> {
   Widget build(BuildContext context) {
     return Consumer<TenantProvider>(
       builder: (context, tenantProvider, child) {
-        final tenants = tenantProvider.tenants;
-
-        Widget body;
-        if (tenantProvider.isLoading) {
-          body = const Center(child: CircularProgressIndicator());
-        } else if (tenants.isEmpty) {
-          body = Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.person_outline,
-                  size: 64,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No tenants found',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          );
-        } else {
-          body = RefreshIndicator(
-            onRefresh: () => tenantProvider.loadTenants(),
-            child: ListView.builder(
-              itemCount: tenants.length,
-              itemBuilder: (context, index) =>
-                  _buildTenantCard(context, tenants[index]),
-            ),
-          );
-        }
-
         return Scaffold(
-          body: body,
+          body: StreamBuilder<List<Tenant>>(
+            stream: tenantProvider.tenantsStream,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text('Error: ${snapshot.error}'),
+                );
+              }
+
+              final tenants = snapshot.data ?? [];
+              final filteredTenants = tenantProvider.tenants;
+
+              if (tenants.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.person_outline,
+                        size: 64,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No tenants found',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                itemCount: filteredTenants.length,
+                itemBuilder: (context, index) =>
+                    _buildTenantCard(context, filteredTenants[index]),
+              );
+            },
+          ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
               Navigator.push(

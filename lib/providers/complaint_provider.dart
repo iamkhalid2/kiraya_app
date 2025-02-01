@@ -1,11 +1,14 @@
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/complaint.dart';
-import '../services/hive_database.dart';
+import '../services/firestore_service.dart';
 
 class ComplaintProvider with ChangeNotifier {
+  final FirestoreService _firestoreService = FirestoreService();
   List<Complaint> _complaints = [];
   String _searchQuery = '';
   bool _isLoading = false;
+  Stream<List<Complaint>>? _complaintsStream;
 
   List<Complaint> get complaints => _searchQuery.isEmpty
       ? _complaints
@@ -20,70 +23,49 @@ class ComplaintProvider with ChangeNotifier {
   }
 
   bool get isLoading => _isLoading;
+  Stream<List<Complaint>>? get complaintsStream => _complaintsStream;
 
-  Future<void> loadComplaints() async {
-    _isLoading = true;
-    notifyListeners();
+  ComplaintProvider() {
+    // Initialize the stream
+    _complaintsStream = _firestoreService.complaintsStream.map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return Complaint.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+      }).toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    });
 
-    try {
-      _complaints = await HiveDatabase.instance.getAllComplaints();
-      _complaints.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    } catch (e) {
-      debugPrint('Error loading complaints: $e');
-    } finally {
-      _isLoading = false;
+    // Listen to stream updates
+    _complaintsStream?.listen((complaints) {
+      _complaints = complaints;
       notifyListeners();
-    }
+    });
   }
 
   Future<void> addComplaint(Complaint complaint) async {
-    _isLoading = true;
-    notifyListeners();
-
     try {
-      final newComplaint = await HiveDatabase.instance.createComplaint(complaint);
-      _complaints.insert(0, newComplaint);
+      await _firestoreService.addComplaint(complaint.toMap());
     } catch (e) {
       debugPrint('Error adding complaint: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      rethrow;
     }
   }
 
   Future<void> updateComplaint(Complaint complaint) async {
-    _isLoading = true;
-    notifyListeners();
-
     try {
-      await HiveDatabase.instance.updateComplaint(complaint);
-      final index = _complaints.indexWhere((c) => c.id == complaint.id);
-      if (index != -1) {
-        _complaints[index] = complaint;
-      }
+      if (complaint.id == null) throw Exception('Complaint ID cannot be null');
+      await _firestoreService.updateComplaint(complaint.id!, complaint.toMap());
     } catch (e) {
       debugPrint('Error updating complaint: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      rethrow;
     }
   }
 
-  Future<void> deleteComplaint(int id) async {
-    _isLoading = true;
-    notifyListeners();
-
+  Future<void> deleteComplaint(String id) async {
     try {
-      _complaints.removeWhere((complaint) => complaint.id == id);
-      notifyListeners();
-      
-      await HiveDatabase.instance.deleteComplaint(id);
+      await _firestoreService.deleteComplaint(id);
     } catch (e) {
       debugPrint('Error deleting complaint: $e');
-      await loadComplaints();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      rethrow;
     }
   }
 
@@ -95,5 +77,10 @@ class ComplaintProvider with ChangeNotifier {
   void clearSearchQuery() {
     _searchQuery = '';
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }

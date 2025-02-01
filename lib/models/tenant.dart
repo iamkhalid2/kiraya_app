@@ -1,28 +1,12 @@
-import 'package:hive/hive.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-part 'tenant.g.dart';
-
-@HiveType(typeId: 0)
-class Tenant extends HiveObject {
-  @HiveField(0)
-  int? id;
-
-  @HiveField(1)
+class Tenant {
+  String? id; // Changed from int to String for Firestore document ID
   String name;
-
-  @HiveField(2)
   String roomNumber;
-
-  @HiveField(3)
   double rentAmount;
-
-  @HiveField(4)
   String paymentStatus;
-
-  @HiveField(5)
   String phoneNumber;
-
-  @HiveField(6)
   DateTime lastPaymentDate;
 
   Tenant({
@@ -37,30 +21,29 @@ class Tenant extends HiveObject {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'name': name,
       'roomNumber': roomNumber,
       'rentAmount': rentAmount,
       'paymentStatus': paymentStatus,
       'phoneNumber': phoneNumber,
-      'lastPaymentDate': lastPaymentDate.toIso8601String(),
+      'lastPaymentDate': Timestamp.fromDate(lastPaymentDate),
     };
   }
 
-  factory Tenant.fromMap(Map<String, dynamic> map) {
+  factory Tenant.fromMap(String id, Map<String, dynamic> map) {
     return Tenant(
-      id: map['id'],
-      name: map['name'],
-      roomNumber: map['roomNumber'],
-      rentAmount: map['rentAmount'].toDouble(),
-      paymentStatus: map['paymentStatus'],
-      phoneNumber: map['phoneNumber'],
-      lastPaymentDate: DateTime.parse(map['lastPaymentDate']),
+      id: id,
+      name: map['name'] as String,
+      roomNumber: map['roomNumber'] as String,
+      rentAmount: (map['rentAmount'] as num).toDouble(),
+      paymentStatus: map['paymentStatus'] as String,
+      phoneNumber: map['phoneNumber'] as String,
+      lastPaymentDate: (map['lastPaymentDate'] as Timestamp).toDate(),
     );
   }
 
   Tenant copyWith({
-    int? id,
+    String? id,
     String? name,
     String? roomNumber,
     double? rentAmount,
