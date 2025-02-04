@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'providers/tenant_provider.dart';
-import 'providers/complaint_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/auth_provider.dart';
-import 'screens/main_screen.dart';
-import 'screens/auth_wrapper.dart';
+import 'screens/auth/auth_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +21,6 @@ class RentManagementApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TenantProvider()),
-        ChangeNotifierProvider(create: (_) => ComplaintProvider()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
       ],
       child: MaterialApp(

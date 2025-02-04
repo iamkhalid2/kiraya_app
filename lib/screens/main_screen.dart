@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
 import '../providers/navigation_provider.dart';
-import '../providers/tenant_provider.dart';
-import '../providers/complaint_provider.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'tenant_list_screen.dart';
-import 'complaints/complaints_screen.dart';
+import 'settings/settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -19,13 +17,13 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const DashboardScreen(),
     const TenantListScreen(),
-    const ComplaintsScreen(),
+    const SettingsScreen(),
   ];
 
   final List<String> _titles = [
     'Dashboard',
     'Tenants',
-    'Complaints',
+    'Settings',
   ];
 
   @override
@@ -79,8 +77,8 @@ class _MainScreenState extends State<MainScreen> {
                       text: 'Tenants',
                     ),
                     GButton(
-                      icon: Icons.report_problem,
-                      text: 'Complaints',
+                      icon: Icons.settings,
+                      text: 'Settings',
                     ),
                   ],
                   selectedIndex: navigationProvider.currentIndex,

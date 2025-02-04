@@ -11,7 +11,6 @@ class FirestoreService {
 
   // Collection references
   CollectionReference get _tenants => _userDoc.collection('tenants');
-  CollectionReference get _complaints => _userDoc.collection('complaints');
 
   // Tenants
   Stream<QuerySnapshot> get tenantsStream => _tenants.snapshots();
@@ -28,18 +27,4 @@ class FirestoreService {
     return _tenants.doc(id).delete();
   }
 
-  // Complaints
-  Stream<QuerySnapshot> get complaintsStream => _complaints.snapshots();
-
-  Future<void> addComplaint(Map<String, dynamic> complaint) {
-    return _complaints.add(complaint);
-  }
-
-  Future<void> updateComplaint(String id, Map<String, dynamic> complaint) {
-    return _complaints.doc(id).update(complaint);
-  }
-
-  Future<void> deleteComplaint(String id) {
-    return _complaints.doc(id).delete();
-  }
 }

@@ -20,6 +20,36 @@ class AuthProvider with ChangeNotifier {
   bool get isAuthenticated => _user != null;
   bool get isLoading => _isLoading;
 
+  // Sign up with email and password
+  Future<bool> signUpWithEmail(String email, String password) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      await _authService.signUpWithEmail(email, password);
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  // Sign in with email and password
+  Future<bool> signInWithEmail(String email, String password) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      await _authService.signInWithEmail(email, password);
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   // Sign in with Google
   Future<bool> signInWithGoogle() async {
     try {
