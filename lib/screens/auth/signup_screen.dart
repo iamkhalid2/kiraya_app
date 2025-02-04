@@ -41,14 +41,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
           _emailController.text.trim(),
           _passwordController.text,
         );
+        // Pop back to login screen after successful registration
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
       } on FirebaseAuthException catch (e) {
-        setState(() => _errorMessage = e.message);
+        String message = e.message ?? 'An error occurred';
+        if (e.code == 'weak-password') {
+          message = 'Password is too weak. Please use a stronger password.';
+        } else if (e.code == 'email-already-in-use') {
+          message = 'An account already exists with this email.';
+        } else if (e.code == 'invalid-email') {
+          message = 'Please enter a valid email address.';
+        }
+        setState(() => _errorMessage = message);
+      } catch (e) {
+        setState(() => _errorMessage = 'An error occurred. Please try again.');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sign Up'),
@@ -160,11 +175,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _signUp,
+                    onPressed: authProvider.isLoading ? null : _signUp,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text('Sign Up'),
+                    child: authProvider.isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Sign Up'),
                   ),
                 ),
                 const SizedBox(height: 16),

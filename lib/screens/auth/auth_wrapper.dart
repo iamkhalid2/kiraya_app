@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/navigation_provider.dart';
+import '../../providers/user_settings_provider.dart';
 import 'login_screen.dart';
 import '../main_screen.dart';
 
@@ -12,17 +14,18 @@ class AuthWrapper extends StatelessWidget {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
         if (authProvider.isLoading) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+          return const Center(
+            child: CircularProgressIndicator(),
           );
         }
 
         if (authProvider.isAuthenticated) {
+          // We are authenticated
           return const MainScreen();
-        } else {
-          return const LoginScreen();
+        }
+
+        // Not authenticated
+        return const LoginScreen();
         }
       },
     );

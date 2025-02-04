@@ -23,6 +23,7 @@ class TenantProvider with ChangeNotifier {
   TenantProvider() {
     // Initialize the stream
     _tenantsStream = _firestoreService.tenantsStream.map((snapshot) {
+      if (snapshot == null) return [];
       return snapshot.docs.map((doc) {
         return Tenant.fromMap(doc.id, doc.data() as Map<String, dynamic>);
       }).toList();

@@ -21,32 +21,28 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   // Sign up with email and password
-  Future<bool> signUpWithEmail(String email, String password) async {
+  Future<UserCredential> signUpWithEmail(String email, String password) async {
     try {
       _isLoading = true;
       notifyListeners();
 
-      await _authService.signUpWithEmail(email, password);
-      return true;
-    } catch (e) {
+      return await _authService.signUpWithEmail(email, password);
+    } finally {
       _isLoading = false;
       notifyListeners();
-      rethrow;
     }
   }
 
   // Sign in with email and password
-  Future<bool> signInWithEmail(String email, String password) async {
+  Future<UserCredential> signInWithEmail(String email, String password) async {
     try {
       _isLoading = true;
       notifyListeners();
 
-      await _authService.signInWithEmail(email, password);
-      return true;
-    } catch (e) {
+      return await _authService.signInWithEmail(email, password);
+    } finally {
       _isLoading = false;
       notifyListeners();
-      rethrow;
     }
   }
 

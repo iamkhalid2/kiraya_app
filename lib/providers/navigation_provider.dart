@@ -11,4 +11,10 @@ class NavigationProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // Reset to initial state (dashboard)
+  void reset() {
+    _currentIndex = 0;
+    notifyListeners();
+  }
 }

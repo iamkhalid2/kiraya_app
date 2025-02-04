@@ -35,13 +35,24 @@ class _LoginScreenState extends State<LoginScreen> {
           _passwordController.text,
         );
       } on FirebaseAuthException catch (e) {
-        setState(() => _errorMessage = e.message);
+        String message = e.message ?? 'An error occurred';
+        if (e.code == 'user-not-found') {
+          message = 'No account exists with this email';
+        } else if (e.code == 'wrong-password') {
+          message = 'Incorrect password';
+        } else if (e.code == 'invalid-email') {
+          message = 'Please enter a valid email address';
+        }
+        setState(() => _errorMessage = message);
+      } catch (e) {
+        setState(() => _errorMessage = 'An error occurred. Please try again.');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
@@ -52,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  'Kiraya',
+                  'Welcome to Kiraya!',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -116,11 +127,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _signInWithEmail,
+                    onPressed: authProvider.isLoading ? null : _signInWithEmail,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text('Sign In'),
+                    child: authProvider.isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2)
+                        )
+                      : const Text('Sign In'),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -145,10 +162,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
                 OutlinedButton.icon(
-                  onPressed: () {
-                    final authProvider = context.read<AuthProvider>();
-                    authProvider.signInWithGoogle();
-                  },
+                  onPressed: authProvider.isLoading
+                    ? null
+                    : () => authProvider.signInWithGoogle(),
                   icon: Image.asset(
                     'assets/google_logo.png',
                     height: 24,

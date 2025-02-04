@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../providers/tenant_provider.dart';
+import '../../providers/user_settings_provider.dart';
 import '../../services/stats_service.dart';
 import '../../models/tenant.dart';
 import 'widgets/stat_card.dart';
@@ -28,12 +29,13 @@ class DashboardScreen extends StatelessWidget {
             }
 
             final tenants = snapshot.data ?? [];
-            final totalRooms = 20; // This should come from settings/configuration
-
+            // Get total rooms from settings
+            final settings = context.watch<UserSettingsProvider>().settings;
             final totalTenants = StatsService.getTotalTenants(tenants);
+            
             final monthlyIncome = StatsService.getTotalMonthlyIncome(tenants);
             final collectionRate = StatsService.getCollectionRate(tenants);
-            final vacancyRate = StatsService.getVacancyRate(tenants, totalRooms);
+            final vacancyRate = StatsService.getVacancyRate(tenants, settings.totalRooms);
             final currentMonthCollection = StatsService.getCurrentMonthCollection(tenants);
             final paymentDistribution = StatsService.getPaymentStatusDistribution(tenants);
             final revenueHistory = StatsService.getRevenueHistory(tenants);
