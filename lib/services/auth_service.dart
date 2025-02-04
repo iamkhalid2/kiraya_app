@@ -58,23 +58,57 @@ class AuthService {
   // Sign in with email and password
   Future<UserCredential> signInWithEmail(String email, String password) async {
     try {
-      return await _auth.signInWithEmailAndPassword(
+      // Try the sign in
+      final result = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found') {
+
+      // If we got here but no user, throw an error
+      if (result.user == null) {
         throw FirebaseAuthException(
-          code: e.code,
-          message: userNotFoundError,
-        );
-      } else if (e.code == 'wrong-password') {
-        throw FirebaseAuthException(
-          code: e.code,
-          message: wrongPasswordError,
+          code: 'no-user',
+          message: 'Sign in failed. Please try again.',
         );
       }
-      rethrow;
+
+      return result;
+    } on FirebaseAuthException catch (e) {
+      print('Auth Error Code: ${e.code}'); // Debug print
+      // Map error codes to user-friendly messages
+      String message;
+      String code = e.code;
+
+      switch (e.code) {
+        case 'user-not-found':
+          message = userNotFoundError;
+          break;
+        case 'wrong-password':
+          message = wrongPasswordError;
+          break;
+        case 'invalid-email':
+          message = 'The email address is invalid.';
+          break;
+        case 'user-disabled':
+          message = 'This account has been disabled.';
+          break;
+        case 'too-many-requests':
+          message = 'Too many attempts. Please try again later.';
+          break;
+        default:
+          message = e.message ?? 'An error occurred during sign in.';
+      }
+
+      throw FirebaseAuthException(
+        code: code,
+        message: message,
+      );
+    } catch (e) {
+      print('Unexpected Auth Error: $e'); // Debug print
+      throw FirebaseAuthException(
+        code: 'unknown',
+        message: 'An unexpected error occurred. Please try again.',
+      );
     }
   }
 

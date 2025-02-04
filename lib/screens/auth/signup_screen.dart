@@ -27,7 +27,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  void _signUp() async {
+  Future<void> _signUp() async {
+    if (!mounted) return;
     if (_formKey.currentState?.validate() ?? false) {
       if (_passwordController.text != _confirmPasswordController.text) {
         setState(() => _errorMessage = 'Passwords do not match');
@@ -35,28 +36,47 @@ class _SignUpScreenState extends State<SignUpScreen> {
       }
 
       try {
+        if (!mounted) return;
         setState(() => _errorMessage = null);
         final authProvider = context.read<AuthProvider>();
-        await authProvider.signUpWithEmail(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
-        // Pop back to login screen after successful registration
-        if (mounted && Navigator.canPop(context)) {
-          Navigator.pop(context);
+        
+        try {
+          await authProvider.signUpWithEmail(
+            _emailController.text.trim(),
+            _passwordController.text,
+          );
+          // Pop back to login screen after successful registration
+          if (!mounted) return;
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
+        } on FirebaseAuthException catch (e) {
+          print('Firebase Auth Error: ${e.code} - ${e.message}');
+          if (!mounted) return;
+          
+          String message;
+          switch (e.code) {
+            case 'weak-password':
+              message = 'Password is too weak. Please use a stronger password.';
+              break;
+            case 'email-already-in-use':
+              message = 'An account already exists with this email.';
+              break;
+            case 'invalid-email':
+              message = 'Please enter a valid email address.';
+              break;
+            case 'operation-not-allowed':
+              message = 'Email/password sign up is not enabled.';
+              break;
+            default:
+              message = e.message ?? 'An error occurred during sign up';
+          }
+          setState(() => _errorMessage = message);
         }
-      } on FirebaseAuthException catch (e) {
-        String message = e.message ?? 'An error occurred';
-        if (e.code == 'weak-password') {
-          message = 'Password is too weak. Please use a stronger password.';
-        } else if (e.code == 'email-already-in-use') {
-          message = 'An account already exists with this email.';
-        } else if (e.code == 'invalid-email') {
-          message = 'Please enter a valid email address.';
-        }
-        setState(() => _errorMessage = message);
       } catch (e) {
-        setState(() => _errorMessage = 'An error occurred. Please try again.');
+        print('Unexpected error: $e');
+        if (!mounted) return;
+        setState(() => _errorMessage = 'An unexpected error occurred');
       }
     }
   }

@@ -25,27 +25,49 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _signInWithEmail() async {
+  Future<void> _signInWithEmail() async {
+    if (!mounted) return;
     if (_formKey.currentState?.validate() ?? false) {
       try {
+        if (!mounted) return;
         setState(() => _errorMessage = null);
+        
         final authProvider = context.read<AuthProvider>();
-        await authProvider.signInWithEmail(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
-      } on FirebaseAuthException catch (e) {
-        String message = e.message ?? 'An error occurred';
-        if (e.code == 'user-not-found') {
-          message = 'No account exists with this email';
-        } else if (e.code == 'wrong-password') {
-          message = 'Incorrect password';
-        } else if (e.code == 'invalid-email') {
-          message = 'Please enter a valid email address';
+        try {
+          await authProvider.signInWithEmail(
+            _emailController.text.trim(),
+            _passwordController.text,
+          );
+          // If we get here, login was successful
+          return;
+        } on FirebaseAuthException catch (e) {
+          print('Firebase Auth Error: ${e.code} - ${e.message}');
+          if (!mounted) return;
+          
+          String message;
+          switch (e.code) {
+            case 'user-not-found':
+              message = 'No account exists with this email';
+              break;
+            case 'wrong-password':
+              message = 'Incorrect password';
+              break;
+            case 'invalid-credential':
+              message = 'Invalid email or password';
+              break;
+            case 'too-many-requests':
+              message = 'Too many attempts. Please try again later';
+              break;
+            default:
+              message = e.message ?? 'An error occurred';
+          }
+          setState(() => _errorMessage = message);
+          return;
         }
-        setState(() => _errorMessage = message);
       } catch (e) {
-        setState(() => _errorMessage = 'An error occurred. Please try again.');
+        print('Unexpected error: $e');
+        if (!mounted) return;
+        setState(() => _errorMessage = 'An unexpected error occurred');
       }
     }
   }

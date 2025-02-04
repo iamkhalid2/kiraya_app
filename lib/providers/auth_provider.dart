@@ -39,10 +39,19 @@ class AuthProvider with ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      return await _authService.signInWithEmail(email, password);
+      try {
+        return await _authService.signInWithEmail(email, password);
+      } catch (e) {
+        _isLoading = false;
+        notifyListeners();
+        rethrow;
+      }
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      // Only set loading to false if we haven't already done so in the catch block
+      if (_isLoading) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
