@@ -54,14 +54,27 @@ class RentManagementApp extends StatelessWidget {
         title: 'Kiraya',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          primarySwatch: Colors.blue,
           useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF005e70),
+            primary: const Color(0xFF005e70),
+            secondary: const Color(0xFF007d96),
+            surfaceTint: const Color(0xFF80afbb),
+          ),
           appBarTheme: const AppBarTheme(
             centerTitle: true,
             elevation: 0,
+            backgroundColor: Color(0xFF005e70),
+            foregroundColor: Colors.white,
           ),
           cardTheme: const CardTheme(
             elevation: 2,
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF005e70),
+              foregroundColor: Colors.white,
+            ),
           ),
         ),
         home: const AuthWrapper(),
