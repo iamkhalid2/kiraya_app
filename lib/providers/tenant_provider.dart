@@ -1,7 +1,9 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import '../models/tenant.dart';
 import '../services/firestore_service.dart';
+import 'room_provider.dart';
 
 class TenantProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
@@ -14,7 +16,8 @@ class TenantProvider with ChangeNotifier {
     ? _tenants 
     : _tenants.where((tenant) => 
         tenant.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-        tenant.roomNumber.toLowerCase().contains(_searchQuery.toLowerCase())
+        tenant.roomId.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+        tenant.section.toLowerCase().contains(_searchQuery.toLowerCase())
       ).toList();
 
   bool get isLoading => _isLoading;
@@ -36,16 +39,29 @@ class TenantProvider with ChangeNotifier {
     });
   }
 
-  Future<void> addTenant(Tenant tenant) async {
+  Future<void> addTenant(BuildContext context, Tenant tenant) async {
     try {
-      await _firestoreService.addTenant(tenant.toMap());
+      // Validate that the room and section exist
+      final roomProvider = Provider.of<RoomProvider>(context, listen: false);
+      if (!roomProvider.rooms.any((room) => room.id == tenant.roomId)) {
+        throw Exception('Invalid room selected');
+      }
+      
+      final room = roomProvider.rooms.firstWhere((room) => room.id == tenant.roomId);
+      if (!room.hasSection(tenant.section)) {
+        throw Exception('Invalid section selected');
+      }
+
+      final docRef = await _firestoreService.addTenant(tenant.toMap());
+      // Update room occupancy
+      await roomProvider.assignTenant(tenant.roomId, tenant.section, docRef.id);
     } catch (e) {
       debugPrint('Error adding tenant: $e');
       rethrow;
     }
   }
 
-  Future<void> updateTenant(Tenant tenant) async {
+  Future<void> updateTenant(BuildContext context, Tenant tenant) async {
     try {
       if (tenant.id == null) throw Exception('Tenant ID cannot be null');
       await _firestoreService.updateTenant(tenant.id!, tenant.toMap());
@@ -55,9 +71,14 @@ class TenantProvider with ChangeNotifier {
     }
   }
 
-  Future<void> deleteTenant(String id) async {
+  Future<void> deleteTenant(BuildContext context, String id) async {
     try {
+      // Get tenant before deletion to get room info
+      final tenant = _tenants.firstWhere((t) => t.id == id);
       await _firestoreService.deleteTenant(id);
+      // Update room occupancy
+      final roomProvider = Provider.of<RoomProvider>(context, listen: false);
+      await roomProvider.removeTenant(tenant.roomId, tenant.section);
     } catch (e) {
       debugPrint('Error deleting tenant: $e');
       rethrow;

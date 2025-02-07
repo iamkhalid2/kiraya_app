@@ -3,7 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Tenant {
   String? id; // Changed from int to String for Firestore document ID
   String name;
-  String roomNumber;
+  String roomId;
+  String section;  // A, B, C, D
   double rentAmount;
   double initialDeposit;
   String paymentStatus;
@@ -13,10 +14,14 @@ class Tenant {
   String? kycImage1;  // Will store image path/url later
   String? kycImage2;  // Will store image path/url later
 
+  // For displaying room number in UI
+  String get roomNumber => roomId;
+
   Tenant({
     this.id,
     required this.name,
-    required this.roomNumber,
+    required this.roomId,
+    required this.section,
     required this.rentAmount,
     required this.initialDeposit,
     required this.paymentStatus,
@@ -30,7 +35,8 @@ class Tenant {
   Map<String, dynamic> toMap() {
     return {
       'name': name,
-      'roomNumber': roomNumber,
+      'roomId': roomId,
+      'section': section,
       'rentAmount': rentAmount,
       'paymentStatus': paymentStatus,
       'phoneNumber': phoneNumber,
@@ -46,7 +52,8 @@ class Tenant {
     return Tenant(
       id: id,
       name: map['name'] as String,
-      roomNumber: map['roomNumber'] as String,
+      roomId: map['roomId'] as String,
+      section: map['section'] as String,
       rentAmount: (map['rentAmount'] as num).toDouble(),
       paymentStatus: map['paymentStatus'] as String,
       phoneNumber: map['phoneNumber'] as String,
@@ -61,7 +68,8 @@ class Tenant {
   Tenant copyWith({
     String? id,
     String? name,
-    String? roomNumber,
+    String? roomId,
+    String? section,
     double? rentAmount,
     String? paymentStatus,
     String? phoneNumber,
@@ -74,7 +82,8 @@ class Tenant {
     return Tenant(
       id: id ?? this.id,
       name: name ?? this.name,
-      roomNumber: roomNumber ?? this.roomNumber,
+      roomId: roomId ?? this.roomId,
+      section: section ?? this.section,
       rentAmount: rentAmount ?? this.rentAmount,
       paymentStatus: paymentStatus ?? this.paymentStatus,
       phoneNumber: phoneNumber ?? this.phoneNumber,

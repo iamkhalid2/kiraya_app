@@ -3,6 +3,7 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
 import '../providers/navigation_provider.dart';
 import 'dashboard/dashboard_screen.dart';
+import 'rooms/room_grid_screen.dart';
 import 'tenant_list_screen.dart';
 import 'settings/settings_screen.dart';
 
@@ -16,12 +17,14 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const DashboardScreen(),
+    const RoomGridScreen(),
     const TenantListScreen(),
     const SettingsScreen(),
   ];
 
   final List<String> _titles = [
     'Dashboard',
+    'Rooms',
     'Tenants',
     'Settings',
   ];
@@ -71,6 +74,10 @@ class _MainScreenState extends State<MainScreen> {
                     GButton(
                       icon: Icons.dashboard,
                       text: 'Dashboard',
+                    ),
+                    GButton(
+                      icon: Icons.meeting_room,
+                      text: 'Rooms',
                     ),
                     GButton(
                       icon: Icons.people,

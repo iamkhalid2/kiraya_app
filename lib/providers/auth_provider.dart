@@ -17,6 +17,7 @@ class AuthProvider with ChangeNotifier {
 
   // Getters
   User? get user => _user;
+  String? get userId => _user?.uid;
   bool get isAuthenticated => _user != null;
   bool get isLoading => _isLoading;
 

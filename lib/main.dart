@@ -5,6 +5,7 @@ import 'providers/tenant_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/user_settings_provider.dart';
+import 'providers/room_provider.dart';
 import 'screens/auth/auth_wrapper.dart';
 
 void main() async {
@@ -47,6 +48,19 @@ class RentManagementApp extends StatelessWidget {
             }
             // Create new instance when authenticated to reset state
             return auth.isAuthenticated ? TenantProvider() : (previous ?? TenantProvider());
+          },
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, RoomProvider>(
+          create: (_) => RoomProvider(),
+          update: (_, auth, previous) {
+            if (!auth.isAuthenticated) {
+              return RoomProvider();
+            }
+            final provider = auth.isAuthenticated ? RoomProvider() : (previous ?? RoomProvider());
+            if (auth.isAuthenticated && auth.userId != null) {
+              provider.initialize(auth.userId!);
+            }
+            return provider;
           },
         ),
       ],

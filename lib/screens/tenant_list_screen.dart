@@ -96,7 +96,7 @@ class _TenantListScreenState extends State<TenantListScreen> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Room ${tenant.roomNumber}'),
+            Text('Room ${tenant.roomNumber} - Section ${tenant.section}'),
             Text(
               'Joined: ${DateFormat('dd/MM/yyyy').format(tenant.joiningDate)}',
               style: Theme.of(context).textTheme.bodySmall,

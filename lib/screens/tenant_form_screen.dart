@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/tenant.dart';
 import '../providers/tenant_provider.dart';
+import '../providers/room_provider.dart';
 import 'package:intl/intl.dart';
 
 class TenantFormScreen extends StatefulWidget {
@@ -17,10 +18,11 @@ class TenantFormScreen extends StatefulWidget {
 class _TenantFormScreenState extends State<TenantFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _roomNumberController = TextEditingController();
   final _rentAmountController = TextEditingController();
   final _initialDepositController = TextEditingController();
   final _phoneNumberController = TextEditingController();
+  String? _selectedRoomId;
+  String? _selectedSection;
   DateTime _joiningDate = DateTime.now();
   String _paymentStatus = 'Paid';
   String? _kycImage1;
@@ -31,7 +33,8 @@ class _TenantFormScreenState extends State<TenantFormScreen> {
     super.initState();
     if (widget.tenant != null) {
       _nameController.text = widget.tenant!.name;
-      _roomNumberController.text = widget.tenant!.roomNumber;
+      _selectedRoomId = widget.tenant!.roomId;
+      _selectedSection = widget.tenant!.section;
       _rentAmountController.text = widget.tenant!.rentAmount.toString();
       _phoneNumberController.text = widget.tenant!.phoneNumber;
       _joiningDate = widget.tenant!.joiningDate;
@@ -45,8 +48,8 @@ class _TenantFormScreenState extends State<TenantFormScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _roomNumberController.dispose();
     _rentAmountController.dispose();
+    _initialDepositController.dispose();
     _phoneNumberController.dispose();
     super.dispose();
   }
@@ -69,32 +72,39 @@ class _TenantFormScreenState extends State<TenantFormScreen> {
     return DateTime(joiningDate.year, joiningDate.month + 1, joiningDate.day);
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       final joiningDate = _joiningDate;
-      final tenant = Tenant(
-        id: widget.tenant?.id,
-        name: _nameController.text,
-        roomNumber: _roomNumberController.text,
-        rentAmount: double.parse(_rentAmountController.text),
-        paymentStatus: _paymentStatus,
-        phoneNumber: _phoneNumberController.text,
-        initialDeposit: double.parse(_initialDepositController.text),
-        joiningDate: joiningDate,
-        nextDueDate: _calculateNextDueDate(joiningDate),
-        kycImage1: _kycImage1,
-        kycImage2: _kycImage2,
-      );
+      try {
+        final tenant = Tenant(
+          id: widget.tenant?.id,
+          name: _nameController.text,
+          roomId: _selectedRoomId!,
+          section: _selectedSection!,
+          rentAmount: double.parse(_rentAmountController.text),
+          initialDeposit: double.parse(_initialDepositController.text),
+          paymentStatus: _paymentStatus,
+          phoneNumber: _phoneNumberController.text,
+          joiningDate: joiningDate,
+          nextDueDate: _calculateNextDueDate(joiningDate),
+          kycImage1: _kycImage1,
+          kycImage2: _kycImage2,
+        );
 
-      final tenantProvider = Provider.of<TenantProvider>(context, listen: false);
-      
-      if (widget.tenant == null) {
-        tenantProvider.addTenant(tenant);
-      } else {
-        tenantProvider.updateTenant(tenant);
+        final tenantProvider = Provider.of<TenantProvider>(context, listen: false);
+        
+        if (widget.tenant == null) {
+          await tenantProvider.addTenant(context, tenant);
+        } else {
+          await tenantProvider.updateTenant(context, tenant);
+        }
+
+        Navigator.of(context).pop();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
       }
-
-      Navigator.of(context).pop();
     }
   }
 
@@ -124,17 +134,80 @@ class _TenantFormScreenState extends State<TenantFormScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _roomNumberController,
-                decoration: const InputDecoration(
-                  labelText: 'Room Number',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter room number';
-                  }
-                  return null;
+              Consumer<RoomProvider>(
+                builder: (context, roomProvider, child) {
+                  final availableRooms = widget.tenant != null 
+                      ? roomProvider.rooms
+                      : roomProvider.rooms.where((room) => !room.isFull()).toList();
+                  final selectedRoom = _selectedRoomId != null 
+                      ? roomProvider.rooms.firstWhere((room) => room.id == _selectedRoomId)
+                      : null;
+
+                  return Column(
+                    children: [
+                      DropdownButtonFormField<String>(
+                        value: _selectedRoomId,
+                        decoration: const InputDecoration(
+                          labelText: 'Select Room',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: availableRooms.map((room) {
+                          final occupancyText = switch (room.occupantLimit) {
+                            1 => 'Single Room',
+                            2 => 'Double Sharing',
+                            3 => 'Triple Sharing',
+                            _ => 'Four Sharing',
+                          };
+                          return DropdownMenuItem(
+                            value: room.id,
+                            child: Text('Room ${room.number} ($occupancyText)'),
+                          );
+                        }).toList(),
+                        onChanged: widget.tenant != null ? null : (roomId) {
+                          setState(() {
+                            _selectedRoomId = roomId;
+                            _selectedSection = null; // Reset section when room changes
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Please select a room';
+                          }
+                          return null;
+                        },
+                      ),
+                      if (_selectedRoomId != null && selectedRoom != null) ...[
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          value: _selectedSection,
+                          decoration: const InputDecoration(
+                            labelText: 'Select Section',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: (widget.tenant != null 
+                              ? [widget.tenant!.section]
+                              : selectedRoom.getAvailableSections()
+                          ).map((section) {
+                            return DropdownMenuItem(
+                              value: section,
+                              child: Text('Section $section'),
+                            );
+                          }).toList(),
+                          onChanged: widget.tenant != null ? null : (section) {
+                            setState(() {
+                              _selectedSection = section;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Please select a section';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ],
+                  );
                 },
               ),
               const SizedBox(height: 16),

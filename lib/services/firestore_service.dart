@@ -45,11 +45,10 @@ class FirestoreService {
   Stream<QuerySnapshot?> get tenantsStream => 
     _tenants?.snapshots() ?? Stream.value(null);
 
-  Future<void> addTenant(Map<String, dynamic> tenant) async {
+  Future<DocumentReference> addTenant(Map<String, dynamic> tenant) async {
     final tenantsRef = _tenants;
     if (tenantsRef == null) throw Exception('User not authenticated');
-    final docRef = await tenantsRef.add(tenant);
-    return;
+    return tenantsRef.add(tenant);
   }
 
   Future<void> updateTenant(String id, Map<String, dynamic> tenant) async {

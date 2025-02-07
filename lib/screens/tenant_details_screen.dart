@@ -58,12 +58,21 @@ class TenantDetailsScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () async {
-              if (tenant.id != null) {
-                await Provider.of<TenantProvider>(context, listen: false)
-                    .deleteTenant(tenant.id!);
+              try {
+                if (tenant.id != null) {
+                  await Provider.of<TenantProvider>(context, listen: false)
+                      .deleteTenant(context, tenant.id!);
+                  if (context.mounted) {
+                    Navigator.of(ctx).pop();
+                    Navigator.of(context).pop();
+                  }
+                }
+              } catch (e) {
                 if (context.mounted) {
                   Navigator.of(ctx).pop();
-                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error deleting tenant: $e')),
+                  );
                 }
               }
             },
@@ -129,7 +138,7 @@ class TenantDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Room ${tenant.roomNumber}',
+                    'Room ${tenant.roomNumber} - Section ${tenant.section}',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ],
