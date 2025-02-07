@@ -98,8 +98,16 @@ class _TenantListScreenState extends State<TenantListScreen> {
           children: [
             Text('Room ${tenant.roomNumber}'),
             Text(
-              'Last Paid: ${DateFormat('dd/MM/yyyy').format(tenant.lastPaymentDate)}',
+              'Joined: ${DateFormat('dd/MM/yyyy').format(tenant.joiningDate)}',
               style: Theme.of(context).textTheme.bodySmall,
+            ),
+            Text(
+              'Due: ${DateFormat('dd/MM/yyyy').format(tenant.nextDueDate)}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: tenant.nextDueDate.isBefore(DateTime.now())
+                        ? Colors.red
+                        : null,
+                  ),
             ),
           ],
         ),

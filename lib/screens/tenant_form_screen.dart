@@ -19,9 +19,12 @@ class _TenantFormScreenState extends State<TenantFormScreen> {
   final _nameController = TextEditingController();
   final _roomNumberController = TextEditingController();
   final _rentAmountController = TextEditingController();
+  final _initialDepositController = TextEditingController();
   final _phoneNumberController = TextEditingController();
-  DateTime _lastPaymentDate = DateTime.now();
+  DateTime _joiningDate = DateTime.now();
   String _paymentStatus = 'Paid';
+  String? _kycImage1;
+  String? _kycImage2;
 
   @override
   void initState() {
@@ -31,7 +34,10 @@ class _TenantFormScreenState extends State<TenantFormScreen> {
       _roomNumberController.text = widget.tenant!.roomNumber;
       _rentAmountController.text = widget.tenant!.rentAmount.toString();
       _phoneNumberController.text = widget.tenant!.phoneNumber;
-      _lastPaymentDate = widget.tenant!.lastPaymentDate;
+      _joiningDate = widget.tenant!.joiningDate;
+      _initialDepositController.text = widget.tenant!.initialDeposit.toString();
+      _kycImage1 = widget.tenant!.kycImage1;
+      _kycImage2 = widget.tenant!.kycImage2;
       _paymentStatus = widget.tenant!.paymentStatus;
     }
   }
@@ -45,22 +51,27 @@ class _TenantFormScreenState extends State<TenantFormScreen> {
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context) async {
+  Future<void> _selectJoiningDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _lastPaymentDate,
+      initialDate: _joiningDate,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
     );
-    if (picked != null && picked != _lastPaymentDate) {
+    if (picked != null && picked != _joiningDate) {
       setState(() {
-        _lastPaymentDate = picked;
+        _joiningDate = picked;
       });
     }
   }
 
+  DateTime _calculateNextDueDate(DateTime joiningDate) {
+    return DateTime(joiningDate.year, joiningDate.month + 1, joiningDate.day);
+  }
+
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      final joiningDate = _joiningDate;
       final tenant = Tenant(
         id: widget.tenant?.id,
         name: _nameController.text,
@@ -68,7 +79,11 @@ class _TenantFormScreenState extends State<TenantFormScreen> {
         rentAmount: double.parse(_rentAmountController.text),
         paymentStatus: _paymentStatus,
         phoneNumber: _phoneNumberController.text,
-        lastPaymentDate: _lastPaymentDate,
+        initialDeposit: double.parse(_initialDepositController.text),
+        joiningDate: joiningDate,
+        nextDueDate: _calculateNextDueDate(joiningDate),
+        kycImage1: _kycImage1,
+        kycImage2: _kycImage2,
       );
 
       final tenantProvider = Provider.of<TenantProvider>(context, listen: false);
@@ -123,21 +138,46 @@ class _TenantFormScreenState extends State<TenantFormScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _rentAmountController,
-                decoration: const InputDecoration(
-                  labelText: 'Rent Amount',
-                  border: OutlineInputBorder(),
-                  prefixText: '₹ ',
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter rent amount';
-                  }
-                  return null;
-                },
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _rentAmountController,
+                      decoration: const InputDecoration(
+                        labelText: 'Rent Amount',
+                        border: OutlineInputBorder(),
+                        prefixText: '₹ ',
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter rent amount';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _initialDepositController,
+                      decoration: const InputDecoration(
+                        labelText: 'Initial Deposit',
+                        border: OutlineInputBorder(),
+                        prefixText: '₹ ',
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter initial deposit';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -181,12 +221,80 @@ class _TenantFormScreenState extends State<TenantFormScreen> {
               ),
               const SizedBox(height: 16),
               ListTile(
-                title: const Text('Last Payment Date'),
+                title: const Text('Joining Date'),
                 subtitle: Text(
-                  DateFormat('dd/MM/yyyy').format(_lastPaymentDate),
+                  DateFormat('dd/MM/yyyy').format(_joiningDate),
                 ),
                 trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context),
+                onTap: () => _selectJoiningDate(context),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'KYC Documents',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Container(
+                          height: 100,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Center(
+                            child: _kycImage1 != null
+                                ? const Icon(Icons.check_circle, color: Colors.green)
+                                : const Text('No ID Proof 1'),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            // Will implement file picking later
+                            setState(() => _kycImage1 = 'dummy_path');
+                          },
+                          icon: const Icon(Icons.upload_file),
+                          label: const Text('ID Proof 1'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Container(
+                          height: 100,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Center(
+                            child: _kycImage2 != null
+                                ? const Icon(Icons.check_circle, color: Colors.green)
+                                : const Text('No ID Proof 2'),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            // Will implement file picking later
+                            setState(() => _kycImage2 = 'dummy_path');
+                          },
+                          icon: const Icon(Icons.upload_file),
+                          label: const Text('ID Proof 2'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 32),
               ElevatedButton(

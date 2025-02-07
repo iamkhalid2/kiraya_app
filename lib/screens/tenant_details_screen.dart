@@ -162,9 +162,29 @@ class TenantDetailsScreen extends StatelessWidget {
                     ),
                     const Divider(),
                     ListTile(
-                      title: const Text('Last Payment Date'),
+                      title: const Text('Initial Deposit'),
                       trailing: Text(
-                        DateFormat('dd/MM/yyyy').format(tenant.lastPaymentDate),
+                        '₹${tenant.initialDeposit.toStringAsFixed(2)}',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    const Divider(),
+                    ListTile(
+                      title: const Text('Joining Date'),
+                      trailing: Text(
+                        DateFormat('dd/MM/yyyy').format(tenant.joiningDate),
+                      ),
+                    ),
+                    const Divider(),
+                    ListTile(
+                      title: const Text('Next Due Date'),
+                      trailing: Text(
+                        DateFormat('dd/MM/yyyy').format(tenant.nextDueDate),
+                        style: TextStyle(
+                          color: tenant.nextDueDate.isBefore(DateTime.now())
+                              ? Colors.red
+                              : null,
+                        ),
                       ),
                     ),
                     const Divider(),
@@ -197,6 +217,63 @@ class TenantDetailsScreen extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+            Card(
+              margin: const EdgeInsets.all(16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'KYC Documents',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              const Text('ID Proof 1'),
+                              const SizedBox(height: 8),
+                              Icon(
+                                tenant.kycImage1 != null
+                                    ? Icons.check_circle
+                                    : Icons.cancel,
+                                color: tenant.kycImage1 != null
+                                    ? Colors.green
+                                    : Colors.red,
+                                size: 32,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              const Text('ID Proof 2'),
+                              const SizedBox(height: 8),
+                              Icon(
+                                tenant.kycImage2 != null
+                                    ? Icons.check_circle
+                                    : Icons.cancel,
+                                color: tenant.kycImage2 != null
+                                    ? Colors.green
+                                    : Colors.red,
+                                size: 32,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 32),

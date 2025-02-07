@@ -5,18 +5,26 @@ class Tenant {
   String name;
   String roomNumber;
   double rentAmount;
+  double initialDeposit;
   String paymentStatus;
   String phoneNumber;
-  DateTime lastPaymentDate;
+  DateTime joiningDate;
+  DateTime nextDueDate;
+  String? kycImage1;  // Will store image path/url later
+  String? kycImage2;  // Will store image path/url later
 
   Tenant({
     this.id,
     required this.name,
     required this.roomNumber,
     required this.rentAmount,
+    required this.initialDeposit,
     required this.paymentStatus,
     required this.phoneNumber,
-    required this.lastPaymentDate,
+    required this.joiningDate,
+    required this.nextDueDate,
+    this.kycImage1,
+    this.kycImage2,
   });
 
   Map<String, dynamic> toMap() {
@@ -26,7 +34,11 @@ class Tenant {
       'rentAmount': rentAmount,
       'paymentStatus': paymentStatus,
       'phoneNumber': phoneNumber,
-      'lastPaymentDate': Timestamp.fromDate(lastPaymentDate),
+      'initialDeposit': initialDeposit,
+      'joiningDate': Timestamp.fromDate(joiningDate),
+      'nextDueDate': Timestamp.fromDate(nextDueDate),
+      'kycImage1': kycImage1,
+      'kycImage2': kycImage2,
     };
   }
 
@@ -38,7 +50,11 @@ class Tenant {
       rentAmount: (map['rentAmount'] as num).toDouble(),
       paymentStatus: map['paymentStatus'] as String,
       phoneNumber: map['phoneNumber'] as String,
-      lastPaymentDate: (map['lastPaymentDate'] as Timestamp).toDate(),
+      initialDeposit: (map['initialDeposit'] as num).toDouble(),
+      joiningDate: (map['joiningDate'] as Timestamp).toDate(),
+      nextDueDate: (map['nextDueDate'] as Timestamp).toDate(),
+      kycImage1: map['kycImage1'] as String?,
+      kycImage2: map['kycImage2'] as String?,
     );
   }
 
@@ -49,7 +65,11 @@ class Tenant {
     double? rentAmount,
     String? paymentStatus,
     String? phoneNumber,
-    DateTime? lastPaymentDate,
+    double? initialDeposit,
+    DateTime? joiningDate,
+    DateTime? nextDueDate,
+    String? kycImage1,
+    String? kycImage2,
   }) {
     return Tenant(
       id: id ?? this.id,
@@ -58,7 +78,11 @@ class Tenant {
       rentAmount: rentAmount ?? this.rentAmount,
       paymentStatus: paymentStatus ?? this.paymentStatus,
       phoneNumber: phoneNumber ?? this.phoneNumber,
-      lastPaymentDate: lastPaymentDate ?? this.lastPaymentDate,
+      initialDeposit: initialDeposit ?? this.initialDeposit,
+      joiningDate: joiningDate ?? this.joiningDate,
+      nextDueDate: nextDueDate ?? this.nextDueDate,
+      kycImage1: kycImage1 ?? this.kycImage1,
+      kycImage2: kycImage2 ?? this.kycImage2,
     );
   }
 }
