@@ -1,4 +1,4 @@
-# Kiraya - Rent Management Application
+# Kiraya - Rent Management App
 
 A comprehensive rent management application built with Flutter and Firebase, designed to help property managers and landlords efficiently manage their rental properties.
 
