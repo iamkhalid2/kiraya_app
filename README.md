@@ -61,7 +61,7 @@ A comprehensive rent management application built with Flutter and Firebase, des
 ### Installation Options
 
 #### Option 1: Download Release
-1. Visit the [Releases](releases-link) section
+1. Visit the [Releases](https://github.com/iamkhalid2/kiraya_app/releases/tag/latest) section
 2. Download the latest version of the application
 3. Install and run the application
 
@@ -120,7 +120,7 @@ flutter run
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome! Feel free to check [issues page](issues-link).
+Contributions, issues, and feature requests are welcome! Feel free to check [issues page](https://github.com/iamkhalid2/kiraya_app/issues).
 
 ## 📄 License
 
