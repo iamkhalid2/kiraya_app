@@ -124,4 +124,4 @@ Contributions, issues, and feature requests are welcome! Feel free to check [iss
 
 ## 📄 License
 
-This project is [MIT](license-link) licensed.
+This project is [BUSL-1.1](https://github.com/iamkhalid2/kiraya_app/blob/main/LICENSE) licensed.
