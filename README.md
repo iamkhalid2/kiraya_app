@@ -1,4 +1,4 @@
-# Kiraya - Rent Management App
+# Kiraya - Rent Management Made Easy
 
 A comprehensive rent management application built with Flutter and Firebase, designed to help property managers and landlords efficiently manage their rental properties.
 
@@ -58,11 +58,17 @@ A comprehensive rent management application built with Flutter and Firebase, des
 2. Firebase project setup
 3. Google Cloud Platform project (for Google Sign-in)
 
-### Setup Instructions
+### Installation Options
 
+#### Option 1: Download Release
+1. Visit the [Releases](releases-link) section
+2. Download the latest version of the application
+3. Install and run the application
+
+#### Option 2: Build from Source
 1. Clone the repository
 ```bash
-git clone [repository-url]
+git clone https://github.com/iamkhalid2/kiraya_app
 cd kiraya
 ```
 
