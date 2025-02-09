@@ -3,187 +3,175 @@ import '../../../models/room.dart';
 
 class RoomTile extends StatelessWidget {
   final Room room;
+  
+  const RoomTile({
+    super.key,
+    required this.room,
+  });
 
-  const RoomTile({super.key, required this.room});
+  Color _getSectionColor(Section section) {
+    if (!section.isOccupied) {
+      return Colors.grey.shade200;  // Vacant
+    }
+    // TODO: Once tenant payment status is tracked in room model
+    // return section.paymentStatus switch {
+    //   'Paid' => Colors.green.shade100,
+    //   'Pending' => Colors.red.shade100,
+    //   'Partial' => Colors.orange.shade100,
+    //   _ => Colors.grey.shade100,
+    // };
+    return Colors.green.shade100;  // Default to paid for now
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Card(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Stack(
-          children: [
-            // Room sections
-            CustomPaint(
-              size: const Size(double.infinity, double.infinity),
-              painter: RoomSectionPainter(room: room),
-            ),
-            // Room info overlay
-            Positioned.fill(
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Room number
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'Room ${room.number}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    // Room type
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        _getRoomTypeText(room.occupantLimit),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            color: theme.primaryColor.withOpacity(0.1),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Room ${room.number}',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    room.type.name,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.primaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Calculate dimensions for section circles
+                  final double size = constraints.maxWidth / 2 - 12;
+                  
+                  // Create grid of sections
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: room.sections.map((section) {
+                      return SizedBox(
+                        width: size,
+                        height: size,
+                        child: Material(
+                          color: _getSectionColor(section),
+                          shape: const CircleBorder(),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  section.id,
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    color: Colors.black54,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                if (section.isOccupied && section.tenantName != null)
+                                  Text(
+                                    section.tenantName!,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: Colors.black45,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
               ),
             ),
-          ],
-        ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: theme.primaryColor.withOpacity(0.05),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${room.occupiedCount}/${room.occupantLimit} Occupied',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (room.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Vacant',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                if (room.isFull)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Full',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.orange,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
-  }
-
-  String _getRoomTypeText(int occupantLimit) {
-    switch (occupantLimit) {
-      case 1:
-        return 'Single Room';
-      case 2:
-        return 'Double Sharing';
-      case 3:
-        return 'Triple Sharing';
-      case 4:
-        return 'Four Sharing';
-      default:
-        return 'Unknown';
-    }
-  }
-}
-
-class RoomSectionPainter extends CustomPainter {
-  final Room room;
-
-  RoomSectionPainter({required this.room});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()..style = PaintingStyle.fill;
-
-    // Calculate section dimensions based on occupant limit
-    double sectionWidth = size.width;
-    double sectionHeight = size.height;
-
-    if (room.occupantLimit == 2) {
-      sectionHeight = size.height / 2;
-    } else if (room.occupantLimit == 3) {
-      if (size.width > size.height) {
-        sectionWidth = size.width / 3;
-      } else {
-        sectionHeight = size.height / 3;
-      }
-    } else if (room.occupantLimit == 4) {
-      sectionWidth = size.width / 2;
-      sectionHeight = size.height / 2;
-    }
-
-    // Draw sections
-    for (int i = 0; i < room.occupantLimit; i++) {
-      final section = room.sections[i];
-      double left = 0;
-      double top = 0;
-
-      // Calculate position based on index and occupant limit
-      if (room.occupantLimit == 2) {
-        top = i * sectionHeight;
-      } else if (room.occupantLimit == 3) {
-        if (size.width > size.height) {
-          left = i * sectionWidth;
-        } else {
-          top = i * sectionHeight;
-        }
-      } else if (room.occupantLimit == 4) {
-        left = (i % 2) * sectionWidth;
-        top = (i ~/ 2) * sectionHeight;
-      }
-
-      // Determine section color
-      Color sectionColor;
-      if (!section.isOccupied) {
-        sectionColor = Colors.white;
-      } else if (section.tenantId != null) {
-        // TODO: Check actual tenant payment status
-        sectionColor = Colors.green;
-      } else {
-        sectionColor = Colors.red;
-      }
-
-      // Draw section
-      canvas.drawRect(
-        Rect.fromLTWH(left, top, sectionWidth, sectionHeight),
-        paint..color = sectionColor,
-      );
-
-      // Draw border
-      canvas.drawRect(
-        Rect.fromLTWH(left, top, sectionWidth, sectionHeight),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..color = Colors.grey[300]!
-          ..strokeWidth = 1,
-      );
-
-      // Draw section label
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: section.id,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      textPainter.paint(
-        canvas,
-        Offset(
-          left + (sectionWidth - textPainter.width) / 2,
-          top + (sectionHeight - textPainter.height) / 2,
-        ),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant RoomSectionPainter oldDelegate) {
-    return oldDelegate.room != room;
   }
 }

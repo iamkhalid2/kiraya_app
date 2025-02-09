@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/room_provider.dart';
+import '../../../providers/user_settings_provider.dart';
 import '../../../models/room.dart';
+import '../../../utils/error_handler.dart';
+import '../../../utils/validators.dart';
 
 class AddRoomModal extends StatefulWidget {
   const AddRoomModal({super.key});
@@ -14,7 +16,8 @@ class AddRoomModal extends StatefulWidget {
 class _AddRoomModalState extends State<AddRoomModal> {
   final _formKey = GlobalKey<FormState>();
   final _roomNumberController = TextEditingController();
-  int _occupantLimit = 1;
+  RoomType _selectedType = RoomType.single;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -23,39 +26,59 @@ class _AddRoomModalState extends State<AddRoomModal> {
   }
 
   Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        final roomProvider = Provider.of<RoomProvider>(context, listen: false);
-        final room = Room(
-          number: _roomNumberController.text,
-          occupantLimit: _occupantLimit,
-        );
+    if (!_formKey.currentState!.validate()) return;
 
-        await roomProvider.addRoom(room);
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error adding room: $e')),
-          );
-        }
+    setState(() => _isSubmitting = true);
+
+    try {
+      final roomProvider = Provider.of<RoomProvider>(context, listen: false);
+      final settingsProvider = Provider.of<UserSettingsProvider>(context, listen: false);
+      
+      // Check room limit
+      final currentRooms = roomProvider.rooms.length;
+      final totalRoomsLimit = settingsProvider.settings.totalRooms;
+      
+      if (currentRooms >= totalRoomsLimit) {
+        throw Exception('Room limit ($totalRoomsLimit) reached');
+      }
+
+      final room = Room(
+        number: _roomNumberController.text,
+        occupantLimit: _selectedType.capacity,
+      );
+
+      await roomProvider.addRoom(room);
+      
+      if (mounted) {
+        ErrorHandler.showSuccess(context, 'Room added successfully');
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorHandler.showError(context, e.toString());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get the keyboard height to adjust padding
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final theme = Theme.of(context);
+    final totalRooms = context.select<UserSettingsProvider, int>(
+      (provider) => provider.settings.totalRooms
+    );
+    final currentRooms = context.watch<RoomProvider>().rooms.length;
+    final roomsAvailable = totalRooms - currentRooms;
 
     return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: bottomInset + 16,
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        16 + MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Form(
         key: _formKey,
@@ -63,102 +86,110 @@ class _AddRoomModalState extends State<AddRoomModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Add New Room',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Add New Room',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Available: $roomsAvailable',
+                  style: TextStyle(
+                    color: roomsAvailable > 0 ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             TextFormField(
               controller: _roomNumberController,
               decoration: const InputDecoration(
                 labelText: 'Room Number',
                 border: OutlineInputBorder(),
+                hintText: 'Enter room number',
               ),
-              keyboardType: TextInputType.text,
+              enabled: !_isSubmitting && roomsAvailable > 0,
               textInputAction: TextInputAction.next,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Za-z-]')),
-              ],
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter room number';
-                }
-                return null;
-              },
+              validator: (value) => DataValidator.validateRoomNumber(
+                value,
+                Provider.of<RoomProvider>(context, listen: false).rooms,
+              ),
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<int>(
-              value: _occupantLimit,
+            DropdownButtonFormField<RoomType>(
+              value: _selectedType,
               decoration: const InputDecoration(
                 labelText: 'Room Type',
                 border: OutlineInputBorder(),
               ),
               items: [
                 DropdownMenuItem(
-                  value: 1,
+                  value: RoomType.single,
                   child: Row(
                     children: [
-                      const Icon(Icons.person),
+                      Icon(Icons.person, color: theme.primaryColor),
                       const SizedBox(width: 8),
                       const Text('Single Room'),
                     ],
                   ),
                 ),
                 DropdownMenuItem(
-                  value: 2,
+                  value: RoomType.double,
                   child: Row(
                     children: [
-                      const Icon(Icons.people),
+                      Icon(Icons.people, color: theme.primaryColor),
                       const SizedBox(width: 8),
                       const Text('Double Sharing'),
                     ],
                   ),
                 ),
                 DropdownMenuItem(
-                  value: 3,
+                  value: RoomType.triple,
                   child: Row(
                     children: [
-                      const Icon(Icons.people_outline),
+                      Icon(Icons.people_outline, color: theme.primaryColor),
                       const SizedBox(width: 8),
                       const Text('Triple Sharing'),
                     ],
                   ),
                 ),
                 DropdownMenuItem(
-                  value: 4,
+                  value: RoomType.quad,
                   child: Row(
                     children: [
-                      const Icon(Icons.groups),
+                      Icon(Icons.groups, color: theme.primaryColor),
                       const SizedBox(width: 8),
                       const Text('Four Sharing'),
                     ],
                   ),
                 ),
               ],
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _occupantLimit = value;
-                  });
-                }
-              },
+              onChanged: _isSubmitting || roomsAvailable <= 0
+                ? null 
+                : (value) {
+                    if (value != null) {
+                      setState(() => _selectedType = value);
+                    }
+                  },
             ),
             const SizedBox(height: 24),
             Container(
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: theme.dividerColor),
                 borderRadius: BorderRadius.circular(8),
               ),
               padding: const EdgeInsets.all(16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(_occupantLimit, (index) {
+                children: List.generate(_selectedType.capacity, (index) {
                   final sectionId = String.fromCharCode(65 + index); // A, B, C, D
                   return CircleAvatar(
-                    backgroundColor: Theme.of(context).primaryColor,
+                    backgroundColor: theme.primaryColor.withAlpha(_isSubmitting ? 128 : 255),
                     child: Text(
                       sectionId,
                       style: const TextStyle(color: Colors.white),
@@ -169,11 +200,17 @@ class _AddRoomModalState extends State<AddRoomModal> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _submitForm,
+              onPressed: roomsAvailable > 0 ? (_isSubmitting ? null : _submitForm) : null,
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
+                minimumSize: const Size.fromHeight(50),
               ),
-              child: const Text('Add Room'),
+              child: _isSubmitting 
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(roomsAvailable > 0 ? 'Add Room' : 'Room Limit Reached'),
             ),
           ],
         ),

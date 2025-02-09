@@ -2,20 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:kiraya/main.dart';
+import 'package:kiraya/providers/auth_provider.dart';
+import 'package:kiraya/providers/room_provider.dart';
 import 'package:kiraya/providers/tenant_provider.dart';
+import 'package:kiraya/providers/user_settings_provider.dart';
 
 void main() {
-  testWidgets('Rent Management App smoke test', (WidgetTester tester) async {
+  testWidgets('App initializes with loading state', (WidgetTester tester) async {
+    // Build our app with required providers
     await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (_) => TenantProvider(),
-        child: const RentManagementApp(),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => AuthProvider()),
+          ChangeNotifierProvider(create: (_) => UserSettingsProvider()),
+          ChangeNotifierProvider(create: (_) => RoomProvider()),
+          ChangeNotifierProvider(create: (_) => TenantProvider()),
+        ],
+        child: const MyApp(),
       ),
     );
 
-    expect(find.text('Rent Management'), findsOneWidget);
-    expect(find.byIcon(Icons.search), findsOneWidget);
-    expect(find.byIcon(Icons.filter_list), findsOneWidget);
-    expect(find.byIcon(Icons.add), findsOneWidget);
+    // Verify that the loading indicator is shown initially
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(Scaffold), findsOneWidget);
   });
 }

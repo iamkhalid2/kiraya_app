@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/room_provider.dart';
+import '../../providers/user_settings_provider.dart';
 import '../../models/room.dart';
 import 'widgets/room_tile.dart';
 import 'widgets/add_room_modal.dart';
@@ -25,8 +26,12 @@ class RoomGridScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Room Management'),
       ),
-      body: Consumer<RoomProvider>(
-        builder: (context, roomProvider, child) {
+      body: Consumer2<RoomProvider, UserSettingsProvider>(
+        builder: (context, roomProvider, settingsProvider, child) {
+          if (!roomProvider.isInitialized || !settingsProvider.isInitialized) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
           return StreamBuilder<List<Room>>(
             stream: roomProvider.roomsStream,
             builder: (context, snapshot) {

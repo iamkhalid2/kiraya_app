@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../models/tenant.dart';
+import '../models/room.dart';
 import '../providers/tenant_provider.dart';
-import 'tenant_form_screen.dart';
+import '../providers/room_provider.dart';
+import 'tenant_form/tenant_form_screen.dart';
 
 class TenantDetailsScreen extends StatelessWidget {
   final Tenant tenant;
@@ -137,9 +139,17 @@ class TenantDetailsScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Room ${tenant.roomNumber} - Section ${tenant.section}',
-                    style: Theme.of(context).textTheme.titleLarge,
+                  Consumer<RoomProvider>(
+                    builder: (context, roomProvider, _) {
+                      final room = roomProvider.rooms.firstWhere(
+                        (room) => room.id == tenant.roomId,
+                        orElse: () => Room(number: 'Unknown', occupantLimit: 0),
+                      );
+                      return Text(
+                        'Room ${room.number} - Section ${tenant.section}',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      );
+                    },
                   ),
                 ],
               ),

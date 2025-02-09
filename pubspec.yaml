@@ -27,10 +27,8 @@ dependencies:
   countup: ^0.1.4
   flutter_staggered_grid_view: ^0.7.0
   shimmer: ^3.0.0
-  # Complaints Feature
-  file_picker: ^6.1.1
-  timeago: ^3.6.0
-  flutter_slidable: ^3.0.0
+  # Image Picker & Management
+  image_picker: ^1.0.5
   # Utils
   collection: ^1.18.0
 
@@ -43,5 +41,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/google_logo.png

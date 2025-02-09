@@ -23,26 +23,46 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Card(
-      elevation: 2,
-      child: Padding(
+      child: Container(
         padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              color.withOpacity(0.05),
+              color.withOpacity(0.02),
+            ],
+          ),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  icon,
-                  color: color,
-                  size: 24,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 20,
+                  ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.grey[600],
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.8),
+                      fontWeight: FontWeight.w500,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -51,21 +71,23 @@ class StatCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Row(
-              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
-                if (isCurrency) 
+                if (isCurrency)
                   Text(
                     '₹',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    style: theme.textTheme.headlineSmall?.copyWith(
                       color: color,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                Text(
-                  isPercentage
-                      ? value.toStringAsFixed(1)
-                      : value.toStringAsFixed(0),
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                Countup(
+                  begin: 0,
+                  end: value,
+                  precision: isPercentage ? 1 : 0,
+                  duration: const Duration(seconds: 1),
+                  style: theme.textTheme.headlineSmall?.copyWith(
                     color: color,
                     fontWeight: FontWeight.bold,
                   ),
@@ -73,18 +95,20 @@ class StatCard extends StatelessWidget {
                 if (isPercentage)
                   Text(
                     '%',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    style: theme.textTheme.headlineSmall?.copyWith(
                       color: color,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                if (suffix != null)
+                if (suffix != null) ...[
+                  const SizedBox(width: 4),
                   Text(
-                    ' $suffix',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.grey[600],
+                    suffix!,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
+                ],
               ],
             ),
           ],

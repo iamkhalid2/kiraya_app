@@ -1,14 +1,33 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+enum RoomType {
+  single(1),
+  double(2),
+  triple(3),
+  quad(4);
+
+  final int capacity;
+  const RoomType(this.capacity);
+
+  static RoomType fromCapacity(int capacity) {
+    return RoomType.values.firstWhere(
+      (type) => type.capacity == capacity,
+      orElse: () => throw ArgumentError('Invalid capacity: $capacity'),
+    );
+  }
+}
+
 class Section {
   final String id;  // A, B, C, D
   bool isOccupied;
   String? tenantId;
+  String? tenantName;  // Cache tenant name to reduce Firestore reads
 
   Section({
     required this.id,
     this.isOccupied = false,
     this.tenantId,
+    this.tenantName,
   });
 
   Map<String, dynamic> toMap() {
@@ -31,79 +50,93 @@ class Section {
 class Room {
   String? id;
   String number;
-  int occupantLimit;
+  RoomType type;
   List<Section> sections;
+  DateTime? lastUpdated;
 
   Room({
     this.id,
     required this.number,
-    required this.occupantLimit,
+    required int occupantLimit,
     List<Section>? sections,
-  }) : sections = sections ?? _createSections(occupantLimit);
+    this.lastUpdated,
+  }) : type = RoomType.fromCapacity(occupantLimit),
+       sections = sections ?? _createSections(occupantLimit);
 
   static List<Section> _createSections(int limit) {
-    final sectionIds = ['A', 'B', 'C', 'D'];
+    const sectionIds = ['A', 'B', 'C', 'D'];
     return List.generate(
       limit,
       (index) => Section(id: sectionIds[index]),
-    );
+    ).toList(growable: false);  // Fixed-length list for better performance
   }
 
   Map<String, dynamic> toMap() {
     return {
       'number': number,
-      'occupantLimit': occupantLimit,
+      'occupantLimit': type.capacity,
       'sections': sections.map((section) => section.toMap()).toList(),
+      'lastUpdated': FieldValue.serverTimestamp(),
     };
   }
 
   factory Room.fromMap(String roomId, Map<String, dynamic> map) {
+    final occupantLimit = map['occupantLimit'] as int;
+    final timestamp = map['lastUpdated'] as Timestamp?;
+    
     return Room(
       id: roomId,
       number: map['number'] as String,
-      occupantLimit: map['occupantLimit'] as int,
+      occupantLimit: occupantLimit,
       sections: (map['sections'] as List<dynamic>)
           .map((section) => Section.fromMap(section as Map<String, dynamic>))
-          .toList(),
+          .toList(growable: false),  // Fixed-length list
+      lastUpdated: timestamp?.toDate(),
     );
   }
 
-  bool isFull() {
-    return sections.every((section) => section.isOccupied);
-  }
+  // Optimized helper methods
+  bool get isFull => sections.every((section) => section.isOccupied);
+  bool get isEmpty => sections.every((section) => !section.isOccupied);
+  int get occupiedCount => sections.where((s) => s.isOccupied).length;
+  int get occupantLimit => type.capacity;
 
-  List<String> getAvailableSections() {
+  List<String> getAvailableSections({String? currentTenantId}) {
     return sections
-        .where((section) => !section.isOccupied)
+        .where((section) => !section.isOccupied || section.tenantId == currentTenantId)
         .map((section) => section.id)
-        .toList();
+        .toList(growable: false);
   }
 
-  bool hasSection(String sectionId) {
-    return sections.any((section) => section.id == sectionId);
-  }
+  bool hasSection(String sectionId) => 
+      sections.indexWhere((section) => section.id == sectionId) != -1;
 
   Section getSection(String sectionId) {
-    return sections.firstWhere(
-      (section) => section.id == sectionId,
-      orElse: () => throw Exception('Section not found: $sectionId'),
-    );
+    final index = sections.indexWhere((section) => section.id == sectionId);
+    if (index == -1) throw Exception('Section not found: $sectionId');
+    return sections[index];
   }
 
-  double getPaymentRatio() {
-    if (sections.isEmpty) return 0.0;
-    
-    int occupied = sections.where((s) => s.isOccupied).length;
-    if (occupied == 0) return 0.0;
+  // Updates section data efficiently
+  void updateSection(String sectionId, {
+    bool? isOccupied, 
+    String? tenantId,
+    String? tenantName,
+  }) {
+    final section = getSection(sectionId);
+    if (isOccupied != null) section.isOccupied = isOccupied;
+    section.tenantId = tenantId;
+    section.tenantName = tenantName;
+  }
 
-    int paid = 0;
-    for (var section in sections) {
-      if (section.isOccupied && section.tenantId != null) {
-        // This will need to be updated to check actual tenant payment status
-        paid++;
-      }
-    }
+  // Checks if a specific tenant can be assigned to this room
+  bool canAcceptTenant(String? currentTenantId) =>
+      !isFull || sections.any((s) => s.tenantId == currentTenantId);
 
-    return paid / occupied;
+  // Gets section occupancy status for UI display
+  Map<String, bool> getSectionOccupancyMap() {
+    return Map.fromEntries(
+      sections.map((s) => MapEntry(s.id, s.isOccupied))
+    );
   }
 }

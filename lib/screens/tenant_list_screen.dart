@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/tenant_provider.dart';
+import '../providers/room_provider.dart';
 import '../models/tenant.dart';
-import 'tenant_form_screen.dart';
+import '../models/room.dart';
+import 'tenant_form/tenant_form_screen.dart';
 import 'tenant_details_screen.dart';
 
 class TenantListScreen extends StatefulWidget {
@@ -15,59 +17,11 @@ class TenantListScreen extends StatefulWidget {
 
 class _TenantListScreenState extends State<TenantListScreen> {
   final _searchController = TextEditingController();
-  bool _isSearching = false;
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _showFilterOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.all_inbox),
-            title: const Text('All'),
-            onTap: () {
-              Provider.of<TenantProvider>(context, listen: false)
-                  .clearSearchQuery();
-              Navigator.pop(ctx);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.check_circle),
-            title: const Text('Paid'),
-            onTap: () {
-              Provider.of<TenantProvider>(context, listen: false)
-                  .setSearchQuery('Paid');
-              Navigator.pop(ctx);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.pending),
-            title: const Text('Pending'),
-            onTap: () {
-              Provider.of<TenantProvider>(context, listen: false)
-                  .setSearchQuery('Pending');
-              Navigator.pop(ctx);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.warning),
-            title: const Text('Partial'),
-            onTap: () {
-              Provider.of<TenantProvider>(context, listen: false)
-                  .setSearchQuery('Partial');
-              Navigator.pop(ctx);
-            },
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildTenantCard(BuildContext context, Tenant tenant) {
@@ -96,7 +50,15 @@ class _TenantListScreenState extends State<TenantListScreen> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Room ${tenant.roomNumber} - Section ${tenant.section}'),
+            Consumer<RoomProvider>(
+              builder: (context, roomProvider, _) {
+                final room = roomProvider.rooms.firstWhere(
+                  (room) => room.id == tenant.roomId,
+                  orElse: () => Room(number: 'Unknown', occupantLimit: 0),
+                );
+                return Text('Room ${room.number} - Section ${tenant.section}');
+              },
+            ),
             Text(
               'Joined: ${DateFormat('dd/MM/yyyy').format(tenant.joiningDate)}',
               style: Theme.of(context).textTheme.bodySmall,
@@ -123,7 +85,7 @@ class _TenantListScreenState extends State<TenantListScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withAlpha(26),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(

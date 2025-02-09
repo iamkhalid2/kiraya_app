@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/navigation_provider.dart';
 import '../../providers/user_settings_provider.dart';
+import '../../providers/room_provider.dart';
+import '../../utils/error_handler.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -14,6 +16,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _roomsController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -29,23 +32,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.dispose();
   }
 
-  void _updateTotalRooms() {
-    if (_formKey.currentState?.validate() ?? false) {
+  Future<void> _updateTotalRooms() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    setState(() => _isSaving = true);
+
+    try {
       final totalRooms = int.parse(_roomsController.text);
-      context.read<UserSettingsProvider>().updateTotalRooms(totalRooms);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Total rooms updated')),
-      );
+      final currentRoomCount = context.read<RoomProvider>().rooms.length;
+
+      await context.read<UserSettingsProvider>()
+          .updateTotalRooms(totalRooms, currentRoomCount);
+      
+      if (mounted) {
+        ErrorHandler.showSuccess(context, 'Room limit updated successfully');
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorHandler.showError(context, e.toString());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
-  void _signOut() {
+  Future<void> _signOut() async {
     final authProvider = context.read<AuthProvider>();
     final navigationProvider = context.read<NavigationProvider>();
     
-    // Reset navigation state before signing out
-    navigationProvider.reset();
-    authProvider.signOut();
+    try {
+      // Reset navigation state before signing out
+      navigationProvider.reset();
+      await authProvider.signOut();
+    } catch (e) {
+      if (mounted) {
+        ErrorHandler.showError(context, e.toString());
+      }
+    }
   }
 
   @override
@@ -71,34 +96,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _roomsController,
-                      decoration: const InputDecoration(
-                        labelText: 'Total Rooms',
-                        hintText: 'Enter total number of rooms',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter total rooms';
-                        }
-                        final rooms = int.tryParse(value);
-                        if (rooms == null) {
-                          return 'Please enter a valid number';
-                        }
-                        if (rooms <= 0) {
-                          return 'Total rooms must be greater than 0';
-                        }
-                        return null;
+                    Consumer<RoomProvider>(
+                      builder: (context, roomProvider, _) {
+                        final currentRoomCount = roomProvider.rooms.length;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextFormField(
+                              controller: _roomsController,
+                              enabled: !_isSaving,
+                              decoration: InputDecoration(
+                                labelText: 'Total Rooms',
+                                hintText: 'Enter total number of rooms',
+                                border: const OutlineInputBorder(),
+                                helperText: 'Current room count: $currentRoomCount',
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter total rooms';
+                                }
+                                final rooms = int.tryParse(value);
+                                if (rooms == null) {
+                                  return 'Please enter a valid number';
+                                }
+                                if (rooms <= 0) {
+                                  return 'Total rooms must be greater than 0';
+                                }
+                                if (rooms < currentRoomCount) {
+                                  return 'Cannot set limit below current room count ($currentRoomCount)';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        );
                       },
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _updateTotalRooms,
-                        child: const Text('Save'),
+                        onPressed: _isSaving ? null : _updateTotalRooms,
+                        child: _isSaving
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Save'),
                       ),
                     ),
                   ],
@@ -108,7 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
-            onPressed: _signOut,
+            onPressed: _isSaving ? null : _signOut,
             icon: const Icon(Icons.logout),
             label: const Text('Sign Out'),
             style: ElevatedButton.styleFrom(

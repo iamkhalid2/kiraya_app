@@ -101,68 +101,142 @@ class _LoginScreenState extends State<LoginScreen> {
                       textAlign: TextAlign.center,
                     ),
                   ),
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFDDDDDD)),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock),
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Sign in with Email',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.email),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (!value.contains('@')) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: !_isPasswordVisible,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock),
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              });
+                            },
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your password';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: authProvider.isLoading ? null : _signInWithEmail,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: Theme.of(context).primaryColor,
+                          foregroundColor: Colors.white,
+                        ),
+                        icon: const Icon(Icons.login),
+                        label: authProvider.isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Sign In with Email'),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 24),
+                  child: const Row(
+                    children: [
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'OR',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Expanded(child: Divider()),
+                    ],
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFDDDDDD)),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: OutlinedButton.icon(
+                    onPressed: authProvider.isLoading
+                        ? null
+                        : () => authProvider.signInWithGoogle(),
+                    icon: Image.asset(
+                      'assets/google_logo.png',
+                      height: 24,
+                      width: 24,
+                    ),
+                    label: const Text(
+                      'Sign in with Google',
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 16,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 24,
+                      ),
+                      backgroundColor: Colors.white,
+                      side: BorderSide.none,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: authProvider.isLoading ? null : _signInWithEmail,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: authProvider.isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2)
-                        )
-                      : const Text('Sign In'),
-                  ),
-                ),
-                const SizedBox(height: 16),
                 TextButton(
                   onPressed: () {
                     Navigator.push(
@@ -172,46 +246,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     );
                   },
-                  child: const Text("Don't have an account? Sign Up"),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'OR',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                OutlinedButton.icon(
-                  onPressed: authProvider.isLoading
-                    ? null
-                    : () => authProvider.signInWithGoogle(),
-                  icon: Image.asset(
-                    'assets/google_logo.png',
-                    height: 24,
-                    width: 24,
-                  ),
-                  label: const Text(
-                    'Sign in with Google',
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontSize: 16,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 24,
-                    ),
-                    backgroundColor: Colors.white,
-                    side: const BorderSide(
-                      color: Color(0xFFDDDDDD),
-                      width: 1,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+                  child: const Text(
+                    "Don't have an account? Sign Up",
+                    style: TextStyle(fontSize: 16),
                   ),
                 ),
               ],

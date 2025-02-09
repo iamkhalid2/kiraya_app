@@ -12,10 +12,10 @@ class StatsService {
   static double getCollectionRate(List<Tenant> tenants) {
     if (tenants.isEmpty) return 0.0;
     
-    final paidTenants = tenants.where((tenant) => 
-      tenant.paymentStatus.toLowerCase() == 'paid' || 
-      tenant.paymentStatus.toLowerCase() == 'partial'
-    ).length;
+    final paidTenants = tenants.where((tenant) {
+      final status = tenant.paymentStatus.toLowerCase();
+      return status == 'paid' || status == 'partial';
+    }).length;
     
     return (paidTenants / tenants.length) * 100;
   }
@@ -71,21 +71,33 @@ class StatsService {
     final history = <DateTime, double>{};
     final now = DateTime.now();
 
-    // Initialize last 6 months with 0
+    // Initialize last N months with 0
     for (var i = 0; i < months; i++) {
       final month = DateTime(now.year, now.month - i);
       history[month] = 0;
     }
 
-    // Calculate revenue for each month based on due dates and payment status
+    // Calculate revenue for each month
     for (var tenant in tenants) {
       if (tenant.paymentStatus.toLowerCase() == 'paid') {
-        final dueDate = tenant.nextDueDate;
-        // Look at the previous month since nextDueDate is for next payment
-        final paymentMonth = DateTime(dueDate.year, dueDate.month - 1);
+        // Look at the current month since nextDueDate is for next payment
+        final paymentMonth = DateTime(
+          tenant.nextDueDate.year, 
+          tenant.nextDueDate.month - 1,
+        );
         
         if (history.containsKey(paymentMonth)) {
           history[paymentMonth] = (history[paymentMonth] ?? 0) + tenant.rentAmount;
+        }
+      } else if (tenant.paymentStatus.toLowerCase() == 'partial') {
+        // Add half rent for partial payments
+        final paymentMonth = DateTime(
+          tenant.nextDueDate.year, 
+          tenant.nextDueDate.month - 1,
+        );
+        
+        if (history.containsKey(paymentMonth)) {
+          history[paymentMonth] = (history[paymentMonth] ?? 0) + (tenant.rentAmount * 0.5);
         }
       }
     }

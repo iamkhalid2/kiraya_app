@@ -1,57 +1,131 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firestore_service.dart';
 import '../models/user_settings.dart';
 
 class UserSettingsProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
-  UserSettings? _settings;
+  UserSettings _settings = UserSettings();
+  bool _isInitialized = false;
   bool _isLoading = false;
+  String? _error;
+  String? _userId;
 
-  UserSettings get settings => _settings ?? UserSettings();
+  UserSettings get settings => _settings;
+  bool get isInitialized => _isInitialized;
   bool get isLoading => _isLoading;
+  String? get error => _error;
 
-  // Initialize settings stream
-  UserSettingsProvider() {
-    _firestoreService.userSettingsStream.listen((snapshot) {
-      if (snapshot?.exists == true) {
-        final data = snapshot?.data() as Map<String, dynamic>?;
-        if (data != null) {
-          _settings = UserSettings.fromMap(data);
-          notifyListeners();
-        }
-      } else {
-        _settings = UserSettings(); // Use default settings if no data
-        notifyListeners();
-      }
-    });
-  }
+  Stream<DocumentSnapshot> get settingsStream => _firestoreService.userSettingsStream;
 
-  // Update total rooms
-  Future<void> updateTotalRooms(int totalRooms) async {
-    try {
-      _isLoading = true;
-      notifyListeners();
-
-      final newSettings = settings.copyWith(totalRooms: totalRooms);
-      await _firestoreService.updateUserSettings(newSettings);
-      
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+  Future<void> updateTotalRooms(int newTotal, int currentRoomCount) async {
+    if (!_isInitialized) {
+      throw Exception('Settings provider not initialized');
     }
+
+    if (newTotal < 1) {
+      throw Exception('Room limit must be at least 1');
+    }
+
+    if (newTotal < currentRoomCount) {
+      throw Exception(
+        'Cannot reduce room limit below current room count ($currentRoomCount)'
+      );
+    }
+
+    final newSettings = _settings.copyWith(totalRooms: newTotal);
+    await updateSettings(newSettings);
   }
 
-  // Load initial settings
-  Future<void> loadSettings() async {
-    try {
-      _isLoading = true;
-      notifyListeners();
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
 
+  void _setError(String? error) {
+    _error = error;
+    notifyListeners();
+  }
+
+  Future<void> initialize(String userId) async {
+    if (_userId == userId && _isInitialized) return;
+
+    _userId = userId;
+    _firestoreService.initialize(userId);
+
+    _setLoading(true);
+    try {
+      await _firestoreService.initializeUserData();
       _settings = await _firestoreService.getUserSettings();
-      
+      _isInitialized = true;
+      _setError(null);
+    } catch (e) {
+      debugPrint('Error initializing settings: $e');
+      _settings = UserSettings(); // Use default settings on error
+      _setError(e.toString());
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
     }
+  }
+
+  Future<void> updateSettings(UserSettings newSettings) async {
+    if (!_isInitialized) {
+      throw Exception('Settings provider not initialized');
+    }
+
+    _setLoading(true);
+    try {
+      await _firestoreService.updateUserSettings(newSettings);
+      _settings = newSettings;
+      _setError(null);
+    } catch (e) {
+      debugPrint('Error updating settings: $e');
+      _setError(e.toString());
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> resetToDefault() async {
+    if (!_isInitialized) {
+      throw Exception('Settings provider not initialized');
+    }
+
+    _setLoading(true);
+    try {
+      final defaultSettings = UserSettings();
+      await _firestoreService.updateUserSettings(defaultSettings);
+      _settings = defaultSettings;
+      _setError(null);
+    } catch (e) {
+      debugPrint('Error resetting settings: $e');
+      _setError(e.toString());
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> cleanUp() async {
+    try {
+      await _firestoreService.deleteUserSettings();
+      _settings = UserSettings();
+      _isInitialized = false;
+      _userId = null;
+      _setError(null);
+    } catch (e) {
+      debugPrint('Error cleaning up settings: $e');
+      _setError(e.toString());
+      rethrow;
+    }
+  }
+
+  @override
+  void dispose() {
+    _isInitialized = false;
+    _settings = UserSettings();
+    _userId = null;
+    super.dispose();
   }
 }
