@@ -49,6 +49,10 @@ GoogleService-Info.plist
 firebase-debug.log
 .firebase/
 firebase-debug.*.log
+.firebaserc
+firebase.json
+firestore.rules
+firestore.indexes.json
 
 # iOS/XCode related
 **/ios/*.mode1v3
