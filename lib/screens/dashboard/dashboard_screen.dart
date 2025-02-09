@@ -5,7 +5,6 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../providers/tenant_provider.dart';
 import '../../providers/user_settings_provider.dart';
 import '../../services/stats_service.dart';
-import '../../models/tenant.dart';
 import 'widgets/stat_card.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -19,9 +18,9 @@ class DashboardScreen extends StatelessWidget {
 
     // If provider isn't initialized yet, show loading
     if (!tenantProvider.isInitialized) {
-      return const Scaffold(
-        appBar: AppBar(title: Text('Dashboard')),
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        appBar: AppBar(title: const Text('Dashboard')),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -90,177 +89,176 @@ class DashboardScreen extends StatelessWidget {
                   child: StatCard(
                     title: 'Vacancy Rate',
                     value: vacancyRate,
-                        color: theme.colorScheme.primary.withBlue(180),
-                        isPercentage: true,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Revenue History',
-                          style: theme.textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          height: 200,
-                          child: LineChart(
-                            LineChartData(
-                              minX: -0.5,
-                              maxX: revenueHistory.length - 0.5,
-                              minY: 0,
-                              maxY: maxRevenue * 1.2,
-                              gridData: FlGridData(
-                                show: true,
-                                drawHorizontalLine: true,
-                                drawVerticalLine: false,
-                                horizontalInterval:
-                                    maxRevenue / 4 < 1 ? 1 : maxRevenue / 4,
-                                getDrawingHorizontalLine: (value) {
-                                  return FlLine(
-                                    color: theme.dividerColor,
-                                    strokeWidth: 1,
-                                  );
-                                },
-                              ),
-                              titlesData: FlTitlesData(
-                                rightTitles: const AxisTitles(),
-                                topTitles: const AxisTitles(),
-                                bottomTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    reservedSize: 30,
-                                    interval: 1,
-                                    getTitlesWidget: (value, meta) {
-                                      if (value.toInt() >=
-                                          revenueHistory.length) {
-                                        return const Text('');
-                                      }
-                                      final date =
-                                          revenueHistory[value.toInt()].key;
-                                      return Transform.rotate(
-                                        angle: -0.5,
-                                        child: Text(
-                                          '${date.month}/${date.year}',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color:
-                                                theme.colorScheme.onSurface,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                leftTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    reservedSize: 45,
-                                    interval: maxRevenue / 4 < 1
-                                        ? 1
-                                        : maxRevenue / 4,
-                                    getTitlesWidget: (value, meta) {
-                                      return Text(
-                                        '₹${value.toInt()}',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color:
-                                              theme.colorScheme.onSurface,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                              borderData: FlBorderData(show: false),
-                              lineBarsData: [
-                                LineChartBarData(
-                                  spots: List.generate(
-                                    revenueHistory.length,
-                                    (index) => FlSpot(
-                                      index.toDouble(),
-                                      revenueHistory[index].value,
-                                    ),
-                                  ),
-                                  isCurved: true,
-                                  color: theme.colorScheme.primary,
-                                  barWidth: 3,
-                                  dotData: FlDotData(
-                                    show: true,
-                                    getDotPainter:
-                                        (spot, percent, barData, index) {
-                                      return FlDotCirclePainter(
-                                        radius: 3,
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                        strokeColor:
-                                            theme.colorScheme.primary,
-                                      );
-                                    },
-                                  ),
-                                  belowBarData: BarAreaData(
-                                    show: true,
-                                    color: theme.colorScheme.primary
-                                        .withAlpha(26),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Payment Status',
-                          style: theme.textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _buildStatusIndicator(
-                              'Paid',
-                              paymentDistribution['paid'] ?? 0,
-                              theme.colorScheme.secondary,
-                            ),
-                            _buildStatusIndicator(
-                              'Pending',
-                              paymentDistribution['pending'] ?? 0,
-                              theme.colorScheme.error,
-                            ),
-                            _buildStatusIndicator(
-                              'Partial',
-                              paymentDistribution['partial'] ?? 0,
-                              theme.colorScheme.tertiary,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                    icon: Icons.door_front_door,
+                    color: theme.colorScheme.primary.withBlue(180),
+                    isPercentage: true,
                   ),
                 ),
               ],
             ),
-          ),
-        );
-      },
+            const SizedBox(height: 24),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Revenue History',
+                      style: theme.textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 200,
+                      child: LineChart(
+                        LineChartData(
+                          minX: -0.5,
+                          maxX: revenueHistory.length - 0.5,
+                          minY: 0,
+                          maxY: maxRevenue * 1.2,
+                          gridData: FlGridData(
+                            show: true,
+                            drawHorizontalLine: true,
+                            drawVerticalLine: false,
+                            horizontalInterval:
+                                maxRevenue / 4 < 1 ? 1 : maxRevenue / 4,
+                            getDrawingHorizontalLine: (value) {
+                              return FlLine(
+                                color: theme.dividerColor,
+                                strokeWidth: 1,
+                              );
+                            },
+                          ),
+                          titlesData: FlTitlesData(
+                            rightTitles: const AxisTitles(),
+                            topTitles: const AxisTitles(),
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 30,
+                                interval: 1,
+                                getTitlesWidget: (value, meta) {
+                                  if (value.toInt() >=
+                                      revenueHistory.length) {
+                                    return const Text('');
+                                  }
+                                  final date =
+                                      revenueHistory[value.toInt()].key;
+                                  return Transform.rotate(
+                                    angle: -0.5,
+                                    child: Text(
+                                      '${date.month}/${date.year}',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color:
+                                            theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 45,
+                                interval: maxRevenue / 4 < 1
+                                    ? 1
+                                    : maxRevenue / 4,
+                                getTitlesWidget: (value, meta) {
+                                  return Text(
+                                    '₹${value.toInt()}',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color:
+                                          theme.colorScheme.onSurface,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          borderData: FlBorderData(show: false),
+                          lineBarsData: [
+                            LineChartBarData(
+                              spots: List.generate(
+                                revenueHistory.length,
+                                (index) => FlSpot(
+                                  index.toDouble(),
+                                  revenueHistory[index].value,
+                                ),
+                              ),
+                              isCurved: true,
+                              color: theme.colorScheme.primary,
+                              barWidth: 3,
+                              dotData: FlDotData(
+                                show: true,
+                                getDotPainter:
+                                    (spot, percent, barData, index) {
+                                  return FlDotCirclePainter(
+                                    radius: 3,
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                    strokeColor:
+                                        theme.colorScheme.primary,
+                                  );
+                                },
+                              ),
+                              belowBarData: BarAreaData(
+                                show: true,
+                                color: theme.colorScheme.primary
+                                    .withAlpha(26),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Payment Status',
+                      style: theme.textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatusIndicator(
+                          'Paid',
+                          paymentDistribution['paid'] ?? 0,
+                          theme.colorScheme.secondary,
+                        ),
+                        _buildStatusIndicator(
+                          'Pending',
+                          paymentDistribution['pending'] ?? 0,
+                          theme.colorScheme.error,
+                        ),
+                        _buildStatusIndicator(
+                          'Partial',
+                          paymentDistribution['partial'] ?? 0,
+                          theme.colorScheme.tertiary,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

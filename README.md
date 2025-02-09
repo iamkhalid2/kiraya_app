@@ -131,4 +131,4 @@ All sensitive files are ignored in version control:
 
 ## 📞 Support
 
-For support, please open an issue in the repository or contact the development team.
+For support, please open an issue in the repository.
