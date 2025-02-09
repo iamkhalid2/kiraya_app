@@ -5,18 +5,59 @@ import '../models/user_settings.dart';
 
 class UserSettingsProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
-  UserSettings _settings = UserSettings();
+  UserSettings _settings = UserSettings();  // Start with default settings
   bool _isInitialized = false;
   bool _isLoading = false;
   String? _error;
   String? _userId;
 
   UserSettings get settings => _settings;
-  bool get isInitialized => _isInitialized;
+  bool get isInitialized => _userId != null;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
   Stream<DocumentSnapshot> get settingsStream => _firestoreService.userSettingsStream;
+
+  // Changed to sync initialization
+  void initialize(String? userId) {
+    if (userId == null) {
+      // Handle logout
+      _settings = UserSettings();  // Reset to defaults
+      _isInitialized = false;
+      _userId = null;
+      _error = null;
+      notifyListeners();
+      return;
+    }
+
+    if (_userId == userId && _isInitialized) return;
+
+    _userId = userId;
+    _firestoreService.initialize(userId);
+    _settings = UserSettings();  // Start with defaults
+    _isInitialized = true;
+    notifyListeners();
+    
+    // Load actual settings in background
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    _setLoading(true);
+    try {
+      await _firestoreService.initializeUserData();
+      final loadedSettings = await _firestoreService.getUserSettings();
+      _settings = loadedSettings;
+      _error = null;
+    } catch (e) {
+      debugPrint('Error loading settings: $e');
+      _error = e.toString();
+      // Keep using default settings on error
+    } finally {
+      _setLoading(false);
+      notifyListeners();
+    }
+  }
 
   Future<void> updateTotalRooms(int newTotal, int currentRoomCount) async {
     if (!_isInitialized) {
@@ -45,27 +86,6 @@ class UserSettingsProvider with ChangeNotifier {
   void _setError(String? error) {
     _error = error;
     notifyListeners();
-  }
-
-  Future<void> initialize(String userId) async {
-    if (_userId == userId && _isInitialized) return;
-
-    _userId = userId;
-    _firestoreService.initialize(userId);
-
-    _setLoading(true);
-    try {
-      await _firestoreService.initializeUserData();
-      _settings = await _firestoreService.getUserSettings();
-      _isInitialized = true;
-      _setError(null);
-    } catch (e) {
-      debugPrint('Error initializing settings: $e');
-      _settings = UserSettings(); // Use default settings on error
-      _setError(e.toString());
-    } finally {
-      _setLoading(false);
-    }
   }
 
   Future<void> updateSettings(UserSettings newSettings) async {

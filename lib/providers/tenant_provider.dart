@@ -11,9 +11,14 @@ class TenantProvider with ChangeNotifier {
   List<Tenant> _tenants = [];
   String _searchQuery = '';
   bool _isLoading = false;
-  Stream<List<Tenant>>? _tenantsStream;
-  StreamSubscription<QuerySnapshot>? _tenantsSubscription;
   String? _userId;
+  StreamSubscription<QuerySnapshot>? _tenantsSubscription;
+
+  void _checkInitialization() {
+    if (!isInitialized) {
+      throw Exception('TenantProvider not initialized');
+    }
+  }
 
   List<Tenant> get tenants => _searchQuery.isEmpty 
     ? _tenants 
@@ -25,15 +30,37 @@ class TenantProvider with ChangeNotifier {
 
   bool get isLoading => _isLoading;
   bool get isInitialized => _userId != null;
-  Stream<List<Tenant>>? get tenantsStream => _tenantsStream;
 
-  void initialize(String userId) {
+  Stream<List<Tenant>> get tenantsStream {
+    if (!isInitialized) throw Exception('TenantProvider not initialized');
+    return _firestoreService.tenantsStream.map((snapshot) {
+      _tenants = snapshot.docs.map((doc) => 
+        Tenant.fromMap(doc.id, doc.data() as Map<String, dynamic>)
+      ).toList();
+      notifyListeners();
+      return _tenants;
+    });
+  }
+
+  void initialize(String? userId) {
+    if (userId == null) {
+      // Handle logout
+      _tenantsSubscription?.cancel();
+      _tenants = [];
+      _userId = null;
+      notifyListeners();
+      return;
+    }
+
     if (_userId == userId) return;
     
+    // Cancel existing subscription first
     _tenantsSubscription?.cancel();
+    _tenants = []; // Clear existing tenants
     _userId = userId;
     _firestoreService.initialize(userId);
     
+    // Set up new subscription
     _tenantsSubscription = _firestoreService.tenantsStream.listen(
       (snapshot) {
         _tenants = snapshot.docs.map((doc) {
@@ -47,12 +74,6 @@ class TenantProvider with ChangeNotifier {
         notifyListeners();
       }
     );
-  }
-
-  void _checkInitialization() {
-    if (!isInitialized) {
-      throw Exception('TenantProvider not initialized');
-    }
   }
 
   Future<void> addTenant(BuildContext context, Tenant tenant) async {
@@ -176,7 +197,7 @@ class TenantProvider with ChangeNotifier {
   @override
   void dispose() {
     _tenantsSubscription?.cancel();
-    _tenants.clear();
+    _tenants = []; // Clear tenants on dispose
     _searchQuery = '';
     _isLoading = false;
     _userId = null;

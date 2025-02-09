@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/tenant_provider.dart';
 import '../providers/room_provider.dart';
+import '../providers/auth_provider.dart';  // Add this import
 import '../models/tenant.dart';
 import '../models/room.dart';
 import 'tenant_form/tenant_form_screen.dart';
@@ -54,7 +55,7 @@ class _TenantListScreenState extends State<TenantListScreen> {
               builder: (context, roomProvider, _) {
                 final room = roomProvider.rooms.firstWhere(
                   (room) => room.id == tenant.roomId,
-                  orElse: () => Room(number: 'Unknown', occupantLimit: 0),
+                  orElse: () => Room(number: 'Unknown', occupantLimit: 1),
                 );
                 return Text('Room ${room.number} - Section ${tenant.section}');
               },
@@ -114,54 +115,63 @@ class _TenantListScreenState extends State<TenantListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TenantProvider>(
-      builder: (context, tenantProvider, child) {
-        return Scaffold(
-          body: StreamBuilder<List<Tenant>>(
-            stream: tenantProvider.tenantsStream,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
+    return Consumer2<AuthProvider, TenantProvider>(
+      builder: (context, authProvider, tenantProvider, child) {
+        if (!authProvider.isAuthenticated) {
+          return const Scaffold(
+            body: Center(child: Text('Please log in to view tenants')),
+          );
+        }
 
-              if (snapshot.hasError) {
-                return Center(
-                  child: Text('Error: ${snapshot.error}'),
-                );
-              }
+        if (!tenantProvider.isInitialized) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-              final tenants = snapshot.data ?? [];
-              final filteredTenants = tenantProvider.tenants;
+        final tenants = tenantProvider.tenants;
 
-              if (tenants.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.person_outline,
-                        size: 64,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No tenants found',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
+        if (tenants.isEmpty) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.person_outline,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No tenants found',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TenantFormScreen(),
                   ),
                 );
-              }
+              },
+              child: const Icon(Icons.add),
+            ),
+          );
+        }
 
-              return ListView.builder(
-                itemCount: filteredTenants.length,
-                itemBuilder: (context, index) =>
-                    _buildTenantCard(context, filteredTenants[index]),
-              );
-            },
+        return Scaffold(
+          body: ListView.builder(
+            itemCount: tenants.length,
+            itemBuilder: (context, index) =>
+                _buildTenantCard(context, tenants[index]),
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {

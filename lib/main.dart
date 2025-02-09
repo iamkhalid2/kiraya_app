@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;  // Hide Firebase's AuthProvider
 import 'firebase_options.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/tenant_list_screen.dart';
@@ -21,10 +22,10 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (ctx) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProxyProvider<AuthProvider, UserSettingsProvider>(
-          create: (ctx) => UserSettingsProvider(),
-          update: (ctx, auth, previous) {
+          create: (_) => UserSettingsProvider(),
+          update: (_, auth, previous) {
             if (auth.user != null) {
               previous?.initialize(auth.user!.uid);
             }
@@ -32,8 +33,8 @@ void main() async {
           },
         ),
         ChangeNotifierProxyProvider<AuthProvider, RoomProvider>(
-          create: (ctx) => RoomProvider(),
-          update: (ctx, auth, previous) {
+          create: (_) => RoomProvider(),
+          update: (_, auth, previous) {
             if (auth.user != null) {
               previous?.initialize(auth.user!.uid);
             }
@@ -41,8 +42,8 @@ void main() async {
           },
         ),
         ChangeNotifierProxyProvider<AuthProvider, TenantProvider>(
-          create: (ctx) => TenantProvider(),
-          update: (ctx, auth, previous) {
+          create: (_) => TenantProvider(),
+          update: (_, auth, previous) {
             if (auth.user != null) {
               previous?.initialize(auth.user!.uid);
             }
@@ -117,16 +118,23 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: StreamBuilder(
-        stream: context.read<AuthProvider>().authStateChanges,
-        builder: (ctx, authSnapshot) {
-          if (authSnapshot.connectionState == ConnectionState.waiting) {
-            return const LoadingScreen();
-          }
-          if (authSnapshot.hasData) {
-            return const HomeScreen();
-          }
-          return const AuthWrapper();
+      home: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          return StreamBuilder<User?>(
+            stream: auth.authStateChanges,
+            builder: (ctx, authSnapshot) {
+              if (authSnapshot.connectionState == ConnectionState.waiting) {
+                return const LoadingScreen();
+              }
+              
+              // No need to explicitly initialize with null since providers already handle it
+              if (!authSnapshot.hasData) {
+                return const AuthWrapper();
+              }
+              
+              return const HomeScreen();
+            },
+          );
         },
       ),
     );

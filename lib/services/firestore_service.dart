@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import '../models/user_settings.dart';
 
 class FirestoreService {
@@ -7,24 +8,26 @@ class FirestoreService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String? _userId;
+  bool _initialized = false;
 
   void initialize(String userId) {
     _userId = userId;
+    _initialized = true;
   }
 
   void _checkInitialized() {
-    if (_userId == null) {
+    if (!_initialized || _userId == null) {
       throw Exception('FirestoreService not initialized');
     }
   }
 
   // User Settings Collection Reference
-  CollectionReference get _userSettings => _firestore.collection('user_settings');
+  CollectionReference get _userSettings => _firestore.collection('users/$_userId/settings');
 
   // Get the current user's settings document
   DocumentReference get _currentUserSettings {
     _checkInitialized();
-    return _userSettings.doc(_userId);
+    return _userSettings.doc('preferences');
   }
 
   // Stream of user settings
@@ -54,6 +57,7 @@ class FirestoreService {
 
   // Update user settings
   Future<void> updateUserSettings(UserSettings settings) async {
+    _checkInitialized();
     try {
       await _currentUserSettings.update(settings.toMap());
     } catch (e) {
@@ -68,6 +72,7 @@ class FirestoreService {
 
   // Delete user settings
   Future<void> deleteUserSettings() async {
+    _checkInitialized();
     try {
       await _currentUserSettings.delete();
     } catch (e) {
@@ -81,38 +86,77 @@ class FirestoreService {
     return _firestore.collection('users/$_userId/tenants');
   }
 
-  // Tenants stream
+  // Tenants stream with ordering and error handling
   Stream<QuerySnapshot> get tenantsStream {
     _checkInitialized();
-    return _tenants.snapshots();
+    return _tenants
+      .orderBy('name')
+      .snapshots()
+      .handleError((error) {
+        debugPrint('Error in tenants stream: $error');
+        // Re-throw to let the UI handle it
+        throw Exception('Failed to load tenants: $error');
+      });
   }
 
-  // Add a new tenant
+  // Add a new tenant using transaction
   Future<DocumentReference> addTenant(Map<String, dynamic> tenantData) async {
     _checkInitialized();
     try {
-      return await _tenants.add(tenantData);
+      final docRef = _tenants.doc();
+      await _firestore.runTransaction((transaction) async {
+        transaction.set(docRef, {
+          ...tenantData,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      });
+      return docRef;
     } catch (e) {
+      debugPrint('Error adding tenant: $e');
       throw Exception('Failed to add tenant: $e');
     }
   }
 
-  // Update a tenant
+  // Update a tenant using transaction
   Future<void> updateTenant(String tenantId, Map<String, dynamic> tenantData) async {
     _checkInitialized();
     try {
-      await _tenants.doc(tenantId).update(tenantData);
+      final docRef = _tenants.doc(tenantId);
+      await _firestore.runTransaction((transaction) async {
+        // Verify document exists
+        final snapshot = await transaction.get(docRef);
+        if (!snapshot.exists) {
+          throw Exception('Tenant not found');
+        }
+        
+        transaction.update(docRef, {
+          ...tenantData,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      });
     } catch (e) {
+      debugPrint('Error updating tenant: $e');
       throw Exception('Failed to update tenant: $e');
     }
   }
 
-  // Delete a tenant
+  // Delete a tenant using transaction
   Future<void> deleteTenant(String tenantId) async {
     _checkInitialized();
     try {
-      await _tenants.doc(tenantId).delete();
+      final docRef = _tenants.doc(tenantId);
+      await _firestore.runTransaction((transaction) async {
+        // Verify document exists
+        final snapshot = await transaction.get(docRef);
+        if (!snapshot.exists) {
+          throw Exception('Tenant not found');
+        }
+        
+        transaction.delete(docRef);
+      });
     } catch (e) {
+      debugPrint('Error deleting tenant: $e');
       throw Exception('Failed to delete tenant: $e');
     }
   }

@@ -26,26 +26,22 @@ class RoomGridScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Room Management'),
       ),
-      body: Consumer2<RoomProvider, UserSettingsProvider>(
-        builder: (context, roomProvider, settingsProvider, child) {
-          if (!roomProvider.isInitialized || !settingsProvider.isInitialized) {
+      body: Consumer<RoomProvider>(
+        builder: (context, roomProvider, child) {
+          if (!roomProvider.isInitialized) {
             return const Center(child: CircularProgressIndicator());
           }
 
           return StreamBuilder<List<Room>>(
             stream: roomProvider.roomsStream,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
               if (snapshot.hasError) {
                 return Center(
                   child: Text('Error: ${snapshot.error}'),
                 );
               }
 
-              final rooms = snapshot.data ?? [];
+              final rooms = snapshot.data ?? roomProvider.rooms;
               
               if (rooms.isEmpty) {
                 return Center(
