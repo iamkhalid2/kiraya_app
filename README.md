@@ -1,74 +1,73 @@
-# Kiraya - Rent Management Made Easy
+# Kiraya - Rental Property Management System
 
-A comprehensive rent management application built with Flutter and Firebase, designed to help property managers and landlords efficiently manage their rental properties.
+A modern Flutter application for managing rental properties, tenants, and rent collection. Built with Firebase backend for real-time data synchronization and secure authentication.
 
-## 🌟 Features
+## ✨ Features
 
 ### Authentication
-- Secure user authentication using Firebase Auth
-- Google Sign-in integration
-- User settings persistence
-- Role-based access control
+- Email/Password and Google Sign-in integration
+- Secure Firebase Authentication
+- Persistent user sessions
+- Password reset functionality
 
 ### Dashboard
-- Interactive analytics charts using fl_chart
-- Real-time statistics and counters
-- Staggered grid layout for data visualization
-- Shimmer loading effects for better UX
+- Real-time revenue analytics
+- Occupancy statistics
+- Payment status tracking
+- Monthly income visualization using fl_chart
+- At-a-glance property overview
+
+### Room Management
+- Dynamic room configuration
+- Section-wise occupancy tracking (A, B, C, D)
+- Visual room status indicators
+- Configurable room limits
+- Real-time availability updates
 
 ### Tenant Management
-- Complete tenant information tracking
-- Provider-based state management for real-time updates
-- Tenant history and documentation
-- Rent tracking and management
+- Comprehensive tenant profiles
+- KYC document storage
+- Rent payment tracking
+- Contact information management
+- Payment history
+- Due date reminders
 
-### Complaints System
-- File upload support for documentation
-- Time-based complaint tracking
-- Interactive slidable UI for complaint management
-- Historical complaint records
+### Settings & Configuration
+- Property configuration
+- Room limit management
+- Theme customization options
+- User preferences
 
-## 🛠 Technical Implementation
+## 🛠 Tech Stack
 
-### State Management
-- Provider pattern for state management
-- Multiple providers handling different aspects:
-  - AuthProvider: Authentication state
-  - NavigationProvider: App navigation state
-  - TenantProvider: Tenant data management
-  - UserSettingsProvider: User preferences
+### Frontend
+- Flutter SDK (>=3.0.0)
+- Material Design 3
+- Provider for state management
+- Responsive UI design
 
 ### Backend
-- Firebase Firestore for data storage
+- Firebase Authentication
+- Cloud Firestore
+- Firebase Storage
 - Real-time data synchronization
-- Cloud-based file storage
-- Secure data access rules
 
-### UI/UX
-- Material Design 3 implementation
-- Custom navigation using Google Navigation Bar
-- Responsive layout supporting multiple screen sizes
-- Smooth animations and transitions
-- Interactive charts and grids
+### Key Packages
+- `provider`: State management
+- `cloud_firestore`: Database operations
+- `firebase_auth`: Authentication
+- `google_sign_in`: OAuth integration
+- `fl_chart`: Analytics visualization
+- `google_nav_bar`: Navigation
+- `flutter_staggered_grid_view`: Dashboard layout
+- `image_picker`: Document upload
+- `url_launcher`: External communications
 
 ## 🚀 Getting Started
 
-### Prerequisites
-1. Flutter SDK (>=3.0.0)
-2. Firebase project setup
-3. Google Cloud Platform project (for Google Sign-in)
-
-### Installation Options
-
-#### Option 1: Download Release
-1. Visit the [Releases](https://github.com/iamkhalid2/kiraya_app/releases/tag/latest) section
-2. Download the latest version of the application
-3. Install and run the application
-
-#### Option 2: Build from Source
 1. Clone the repository
 ```bash
-git clone https://github.com/iamkhalid2/kiraya_app
+git clone <repository-url>
 cd kiraya
 ```
 
@@ -77,19 +76,21 @@ cd kiraya
 flutter pub get
 ```
 
-3. Configure Firebase
+3. Firebase Setup
 - Create a new Firebase project
-- Add your Firebase configuration files:
-  - For Android: `google-services.json` in `android/app`
-  - For iOS: `GoogleService-Info.plist` in `ios/Runner`
-- Update Firebase configuration in the project
+- Enable Authentication (Email/Password and Google Sign-in)
+- Set up Cloud Firestore
+- Download and add Firebase configuration files:
+  - Android: Place `google-services.json` in `android/app/`
+  - iOS: Place `GoogleService-Info.plist` in `ios/Runner/`
+  - Configure web platform if needed
 
 4. Run the application
 ```bash
 flutter run
 ```
 
-## 📱 Platform Support
+## 📱 Supported Platforms
 
 - ✅ Android
 - ✅ iOS
@@ -98,30 +99,36 @@ flutter run
 - ✅ macOS
 - ✅ Linux
 
-## 📚 Dependencies
+## 🔒 Environment Setup
 
-### Core
-- `firebase_core`, `firebase_auth`, `cloud_firestore`: Firebase integration
-- `google_sign_in`: Google authentication
-- `provider`: State management
-
-### UI Components
-- `google_nav_bar`: Custom navigation
-- `fl_chart`: Interactive charts
-- `flutter_staggered_grid_view`: Dashboard layouts
-- `shimmer`: Loading effects
-- `flutter_slidable`: Interactive list items
-
-### Utils
-- `intl`: Internationalization
-- `timeago`: Relative time calculations
-- `path_provider`: File system access
-- `url_launcher`: External URL handling
+Required environment variables and configurations:
+- Firebase configuration
+- Google Sign-in client IDs
+- Minimum Flutter SDK version: 3.0.0
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome! Feel free to check [issues page](https://github.com/iamkhalid2/kiraya_app/issues).
+Contributions welcome! Please feel free to submit pull requests.
 
-## 📄 License
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
 
-This project is [BUSL-1.1](https://github.com/iamkhalid2/kiraya_app/blob/main/LICENSE) licensed.
+## 📝 License
+
+This project is licensed under the BUSL-1.1 License - see the [LICENSE](LICENSE) file for details.
+
+## 🛡️ Security
+
+All sensitive files are ignored in version control:
+- Firebase configuration files
+- Google Services configuration
+- Keystore files
+- Local properties
+- Build outputs
+
+## 📞 Support
+
+For support, please open an issue in the repository or contact the development team.
