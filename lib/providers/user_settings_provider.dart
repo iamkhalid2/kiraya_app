@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:async';  // Added this import
 import '../services/firestore_service.dart';
 import '../models/user_settings.dart';
 
@@ -11,17 +10,16 @@ class UserSettingsProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   String? _userId;
-  StreamSubscription<DocumentSnapshot>? _settingsSubscription;
 
   UserSettings get settings => _settings;
   bool get isInitialized => _userId != null;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  Stream<DocumentSnapshot> get settingsStream => _firestoreService.userSettingsStream;
+
+  // Changed to sync initialization
   void initialize(String? userId) {
-    // Always cancel existing subscription first
-    _settingsSubscription?.cancel();
-    
     if (userId == null) {
       // Handle logout
       _settings = UserSettings();  // Reset to defaults
@@ -38,28 +36,26 @@ class UserSettingsProvider with ChangeNotifier {
     _firestoreService.initialize(userId);
     _settings = UserSettings();  // Start with defaults
     _isInitialized = true;
-    
-    // Set up settings subscription
-    _settingsSubscription = _firestoreService.userSettingsStream.listen(
-      (snapshot) {
-        if (snapshot.exists) {
-          _settings = UserSettings.fromMap(snapshot.data() as Map<String, dynamic>);
-          _error = null;
-        } else {
-          _settings = UserSettings();  // Use defaults if no settings exist
-        }
-        _isLoading = false;
-        notifyListeners();
-      },
-      onError: (e) {
-        debugPrint('Error in settings stream: $e');
-        _error = e.toString();
-        _isLoading = false;
-        notifyListeners();
-      },
-    );
-    
     notifyListeners();
+    
+    // Load settings in background
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    _setLoading(true);
+    try {
+      final loadedSettings = await _firestoreService.getUserSettings();
+      _settings = loadedSettings;
+      _error = null;
+    } catch (e) {
+      debugPrint('Error loading settings: $e');
+      _error = e.toString();
+      // Keep using default settings on error
+    } finally {
+      _setLoading(false);
+      notifyListeners();
+    }
   }
 
   Future<void> updateTotalRooms(int newTotal, int currentRoomCount) async {
@@ -146,11 +142,9 @@ class UserSettingsProvider with ChangeNotifier {
 
   @override
   void dispose() {
-    _settingsSubscription?.cancel();
     _isInitialized = false;
     _settings = UserSettings();
     _userId = null;
-    _isLoading = false;
     super.dispose();
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/user_settings_provider.dart';
+import '../providers/room_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -51,22 +52,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _isSubmitting = true);
 
     try {
+      final currentRoomCount = Provider.of<RoomProvider>(context, listen: false).rooms.length;
+      final newLimit = int.parse(_roomLimitController.text);
+
+      if (newLimit < currentRoomCount) {
+        throw Exception(
+          'Cannot reduce room limit below current room count ($currentRoomCount). '
+          'Please delete ${currentRoomCount - newLimit} room(s) first.',
+        );
+      }
+
       final settings = Provider.of<UserSettingsProvider>(context, listen: false);
       await settings.updateSettings(
-        settings.settings.copyWith(
-          totalRooms: int.parse(_roomLimitController.text),
-        ),
+        settings.settings.copyWith(totalRooms: newLimit),
       );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Settings saved successfully')),
+          const SnackBar(
+            content: Text('Settings saved successfully'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving settings: $e')),
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -108,47 +123,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _roomLimitController,
-                      decoration: const InputDecoration(
-                        labelText: 'Total Rooms Limit',
-                        border: OutlineInputBorder(),
-                        helperText: 'Maximum number of rooms you can manage',
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      enabled: !_isSubmitting,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter room limit';
-                        }
-                        final limit = int.tryParse(value);
-                        if (limit == null || limit < 1) {
-                          return 'Room limit must be at least 1';
-                        }
-                        if (limit > 100) {
-                          return 'Room limit cannot exceed 100';
-                        }
-                        return null;
+                    Consumer<RoomProvider>(
+                      builder: (context, roomProvider, _) {
+                        final currentRoomCount = roomProvider.rooms.length;
+                        return TextFormField(
+                          controller: _roomLimitController,
+                          decoration: InputDecoration(
+                            labelText: 'Total Rooms Limit',
+                            border: const OutlineInputBorder(),
+                            helperText: 'Current room usage: $currentRoomCount room(s)',
+                            helperMaxLines: 2,
+                            suffixIcon: Tooltip(
+                              message: 'Room limit cannot be less than current room count',
+                              child: const Icon(Icons.info_outline),
+                            ),
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          enabled: !_isSubmitting,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter room limit';
+                            }
+                            final limit = int.tryParse(value);
+                            if (limit == null || limit < 1) {
+                              return 'Room limit must be at least 1';
+                            }
+                            if (limit > 100) {
+                              return 'Room limit cannot exceed 100';
+                            }
+                            if (limit < currentRoomCount) {
+                              return 'Cannot set limit below current room count ($currentRoomCount).\nDelete some rooms first.';
+                            }
+                            return null;
+                          },
+                        );
                       },
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isSubmitting ? null : _saveSettings,
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(50),
+                        ),
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Save Settings'),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isSubmitting ? null : _saveSettings,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(50),
-              ),
-              child: _isSubmitting
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Save Settings'),
             ),
           ],
         ),
