@@ -10,7 +10,7 @@ class TenantProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
   List<Tenant> _tenants = [];
   String _searchQuery = '';
-  bool _isLoading = false;
+  bool _isLoading = true;
   String? _userId;
   StreamSubscription<QuerySnapshot>? _tenantsSubscription;
 
@@ -32,47 +32,58 @@ class TenantProvider with ChangeNotifier {
   bool get isInitialized => _userId != null;
 
   Stream<List<Tenant>> get tenantsStream {
-    if (!isInitialized) throw Exception('TenantProvider not initialized');
+    if (!isInitialized) return Stream.value([]);
     return _firestoreService.tenantsStream.map((snapshot) {
       _tenants = snapshot.docs.map((doc) => 
         Tenant.fromMap(doc.id, doc.data() as Map<String, dynamic>)
       ).toList();
       notifyListeners();
       return _tenants;
+    }).handleError((error) {
+      debugPrint('Error in tenants stream: $error');
+      _tenants = [];
+      notifyListeners();
+      return [];
     });
   }
 
   void initialize(String? userId) {
+    // Always cancel existing subscription first
+    _tenantsSubscription?.cancel();
+    
     if (userId == null) {
       // Handle logout
-      _tenantsSubscription?.cancel();
       _tenants = [];
       _userId = null;
+      _isLoading = false;
       notifyListeners();
       return;
     }
 
-    if (_userId == userId) return;
-    
-    // Cancel existing subscription first
-    _tenantsSubscription?.cancel();
-    _tenants = []; // Clear existing tenants
+    // Reset state before initializing
+    _tenants = [];
+    _isLoading = true;
+    notifyListeners();
+
+    // Initialize with new user ID
     _userId = userId;
     _firestoreService.initialize(userId);
-    
+
     // Set up new subscription
     _tenantsSubscription = _firestoreService.tenantsStream.listen(
       (snapshot) {
         _tenants = snapshot.docs.map((doc) {
           return Tenant.fromMap(doc.id, doc.data() as Map<String, dynamic>);
         }).toList();
+        _isLoading = false;
         notifyListeners();
       },
       onError: (e) {
         debugPrint('Error in tenants subscription: $e');
         _tenants = [];
+        _isLoading = false;
         notifyListeners();
-      }
+      },
     );
   }
 
@@ -197,7 +208,7 @@ class TenantProvider with ChangeNotifier {
   @override
   void dispose() {
     _tenantsSubscription?.cancel();
-    _tenants = []; // Clear tenants on dispose
+    _tenants = [];
     _searchQuery = '';
     _isLoading = false;
     _userId = null;

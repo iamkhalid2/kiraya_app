@@ -13,6 +13,10 @@ class FirestoreService {
   void initialize(String userId) {
     _userId = userId;
     _initialized = true;
+    // Ensure user document exists
+    _initializeUserData().catchError((e) {
+      debugPrint('Error initializing user data: $e');
+    });
   }
 
   void _checkInitialized() {
@@ -30,10 +34,13 @@ class FirestoreService {
     return _userSettings.doc('preferences');
   }
 
-  // Stream of user settings
+  // Stream of user settings with error handling
   Stream<DocumentSnapshot> get userSettingsStream {
     _checkInitialized();
-    return _currentUserSettings.snapshots();
+    return _currentUserSettings.snapshots().handleError((error) {
+      debugPrint('Error in settings stream: $error');
+      throw Exception('Failed to load settings: $error');
+    });
   }
 
   // Get user settings
@@ -51,6 +58,7 @@ class FirestoreService {
 
       return UserSettings.fromMap(doc.data() as Map<String, dynamic>);
     } catch (e) {
+      debugPrint('Error getting user settings: $e');
       throw Exception('Failed to get user settings: $e');
     }
   }
@@ -59,14 +67,10 @@ class FirestoreService {
   Future<void> updateUserSettings(UserSettings settings) async {
     _checkInitialized();
     try {
-      await _currentUserSettings.update(settings.toMap());
+      await _currentUserSettings.set(settings.toMap(), SetOptions(merge: true));
     } catch (e) {
-      if (e is FirebaseException && e.code == 'not-found') {
-        // Create settings if they don't exist
-        await _currentUserSettings.set(settings.toMap());
-      } else {
-        throw Exception('Failed to update user settings: $e');
-      }
+      debugPrint('Error updating user settings: $e');
+      throw Exception('Failed to update user settings: $e');
     }
   }
 
@@ -76,11 +80,12 @@ class FirestoreService {
     try {
       await _currentUserSettings.delete();
     } catch (e) {
+      debugPrint('Error deleting user settings: $e');
       throw Exception('Failed to delete user settings: $e');
     }
   }
 
-  // Tenants Collection Reference
+  // Tenants Collection Reference with caching
   CollectionReference get _tenants {
     _checkInitialized();
     return _firestore.collection('users/$_userId/tenants');
@@ -94,7 +99,6 @@ class FirestoreService {
       .snapshots()
       .handleError((error) {
         debugPrint('Error in tenants stream: $error');
-        // Re-throw to let the UI handle it
         throw Exception('Failed to load tenants: $error');
       });
   }
@@ -124,7 +128,6 @@ class FirestoreService {
     try {
       final docRef = _tenants.doc(tenantId);
       await _firestore.runTransaction((transaction) async {
-        // Verify document exists
         final snapshot = await transaction.get(docRef);
         if (!snapshot.exists) {
           throw Exception('Tenant not found');
@@ -147,7 +150,6 @@ class FirestoreService {
     try {
       final docRef = _tenants.doc(tenantId);
       await _firestore.runTransaction((transaction) async {
-        // Verify document exists
         final snapshot = await transaction.get(docRef);
         if (!snapshot.exists) {
           throw Exception('Tenant not found');
@@ -162,15 +164,34 @@ class FirestoreService {
   }
 
   // Initialize user data
-  Future<void> initializeUserData() async {
+  Future<void> _initializeUserData() async {
     _checkInitialized();
     try {
-      // Create default settings if they don't exist
-      final settingsDoc = await _currentUserSettings.get();
-      if (!settingsDoc.exists) {
-        await _currentUserSettings.set(UserSettings().toMap());
-      }
+      final userDoc = _firestore.doc('users/$_userId');
+      final settingsDoc = _currentUserSettings;
+
+      // Run in a transaction to ensure atomicity
+      await _firestore.runTransaction((transaction) async {
+        final userSnapshot = await transaction.get(userDoc);
+        final settingsSnapshot = await transaction.get(settingsDoc);
+
+        if (!userSnapshot.exists) {
+          transaction.set(userDoc, {
+            'createdAt': FieldValue.serverTimestamp(),
+            'lastAccess': FieldValue.serverTimestamp(),
+          });
+        } else {
+          transaction.update(userDoc, {
+            'lastAccess': FieldValue.serverTimestamp(),
+          });
+        }
+
+        if (!settingsSnapshot.exists) {
+          transaction.set(settingsDoc, UserSettings().toMap());
+        }
+      });
     } catch (e) {
+      debugPrint('Error initializing user data: $e');
       throw Exception('Failed to initialize user data: $e');
     }
   }

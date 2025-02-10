@@ -9,37 +9,39 @@ class RoomProvider with ChangeNotifier {
   CollectionReference? _rooms;
   List<Room> _roomsList = [];
   String? _userId;
+  bool _isLoading = true;
   StreamSubscription<QuerySnapshot>? _roomsSubscription;
-
-  // Cache to optimize tenant-room lookups
-  final _tenantRoomCache = <String, MapEntry<String, String>>{}; // tenantId -> (roomId, sectionId)
+  final _tenantRoomCache = <String, MapEntry<String, String>>{};
 
   List<Room> get rooms => List.unmodifiable(_roomsList);
-  bool get isInitialized => _rooms != null;
+  bool get isInitialized => _userId != null;
+  bool get isLoading => _isLoading;
 
-  Stream<List<Room>> get roomsStream {
-    if (_rooms == null) return Stream.value([]);
-
-    return _rooms!.snapshots().map((snapshot) {
-      _roomsList = snapshot.docs.map((doc) {
-        return Room.fromMap(
-          doc.id,
-          doc.data() as Map<String, dynamic>,
-        );
-      }).toList()..sort((a, b) => a.number.compareTo(b.number));
-      _updateTenantRoomCache();
-      notifyListeners();
-      return List.unmodifiable(_roomsList);
-    });
-  }
-
-  void initialize(String userId) {
-    if (_userId == userId && _rooms != null) return;
-    
+  void initialize(String? userId) {
+    // Always cancel existing subscription first
     _roomsSubscription?.cancel();
+    
+    if (userId == null) {
+      // Handle logout
+      _roomsList = [];
+      _tenantRoomCache.clear();
+      _userId = null;
+      _rooms = null;
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    // Reset state before initializing
+    _roomsList = [];
+    _tenantRoomCache.clear();
+    _isLoading = true;
+    notifyListeners();
+    
     _userId = userId;
     _rooms = _firestore.collection('users/$userId/rooms');
     
+    // Set up new subscription
     _roomsSubscription = _rooms!.snapshots().listen(
       (snapshot) {
         _roomsList = snapshot.docs.map((doc) {
@@ -50,12 +52,14 @@ class RoomProvider with ChangeNotifier {
         }).toList()..sort((a, b) => a.number.compareTo(b.number));
         
         _updateTenantRoomCache();
+        _isLoading = false;
         notifyListeners();
       },
       onError: (e) {
         debugPrint('Error in rooms subscription: $e');
         _roomsList = [];
         _tenantRoomCache.clear();
+        _isLoading = false;
         notifyListeners();
       },
     );
@@ -211,6 +215,7 @@ class RoomProvider with ChangeNotifier {
     _tenantRoomCache.clear();
     _rooms = null;
     _userId = null;
+    _isLoading = false;
     super.dispose();
   }
 }

@@ -11,6 +11,7 @@ import 'providers/tenant_provider.dart';
 import 'providers/room_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/user_settings_provider.dart';
+import 'providers/navigation_provider.dart';  // Added this import
 import 'screens/auth/auth_wrapper.dart';
 import 'widgets/loading_screen.dart';
 
@@ -23,11 +24,20 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, NavigationProvider>(
+          create: (_) => NavigationProvider(),
+          update: (_, auth, previous) {
+            if (!auth.isAuthenticated) {
+              previous?.reset();
+            }
+            return previous ?? NavigationProvider();
+          },
+        ),
         ChangeNotifierProxyProvider<AuthProvider, UserSettingsProvider>(
           create: (_) => UserSettingsProvider(),
           update: (_, auth, previous) {
-            if (auth.user != null) {
-              previous?.initialize(auth.user!.uid);
+            if (auth.isInitialized) {
+              previous?.initialize(auth.user?.uid);
             }
             return previous ?? UserSettingsProvider();
           },
@@ -35,8 +45,8 @@ void main() async {
         ChangeNotifierProxyProvider<AuthProvider, RoomProvider>(
           create: (_) => RoomProvider(),
           update: (_, auth, previous) {
-            if (auth.user != null) {
-              previous?.initialize(auth.user!.uid);
+            if (auth.isInitialized) {
+              previous?.initialize(auth.user?.uid);
             }
             return previous ?? RoomProvider();
           },
@@ -44,8 +54,8 @@ void main() async {
         ChangeNotifierProxyProvider<AuthProvider, TenantProvider>(
           create: (_) => TenantProvider(),
           update: (_, auth, previous) {
-            if (auth.user != null) {
-              previous?.initialize(auth.user!.uid);
+            if (auth.isInitialized) {
+              previous?.initialize(auth.user?.uid);
             }
             return previous ?? TenantProvider();
           },

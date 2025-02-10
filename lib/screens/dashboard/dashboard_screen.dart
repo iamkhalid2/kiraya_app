@@ -16,7 +16,6 @@ class DashboardScreen extends StatelessWidget {
     final tenantProvider = Provider.of<TenantProvider>(context);
     final userSettings = Provider.of<UserSettingsProvider>(context).settings;
 
-    // If provider isn't initialized yet, show loading
     if (!tenantProvider.isInitialized) {
       return Scaffold(
         appBar: AppBar(title: const Text('Dashboard')),
@@ -89,7 +88,7 @@ class DashboardScreen extends StatelessWidget {
                   child: StatCard(
                     title: 'Vacancy Rate',
                     value: vacancyRate,
-                    icon: Icons.door_front_door,
+                    icon: Icons.meeting_room,
                     color: theme.colorScheme.primary.withBlue(180),
                     isPercentage: true,
                   ),

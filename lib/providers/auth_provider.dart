@@ -6,11 +6,21 @@ class AuthProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   bool _isLoading = false;
+  bool _isInitialized = false;
 
   User? get user => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
   bool get isLoading => _isLoading;
   bool get isAuthenticated => user != null;
+  bool get isInitialized => _isInitialized;
+
+  AuthProvider() {
+    // Listen to auth state changes to update initialization state
+    _auth.authStateChanges().listen((User? user) {
+      _isInitialized = true;
+      notifyListeners();
+    });
+  }
 
   void _setLoading(bool value) {
     _isLoading = value;
@@ -189,5 +199,11 @@ class AuthProvider with ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  @override
+  void dispose() {
+    _isInitialized = false;
+    super.dispose();
   }
 }
