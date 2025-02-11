@@ -31,6 +31,7 @@ class TenantFormContentState extends State<TenantFormContent> {
   String? _selectedSection;
   DateTime _joiningDate = DateTime.now();
   String _paymentStatus = 'Paid';
+  double? _paidAmount;
   String? _kycImage1;
   String? _kycImage2;
   String? _oldRoomId;
@@ -61,6 +62,7 @@ class TenantFormContentState extends State<TenantFormContent> {
     _kycImage1 = tenant.kycImage1;
     _kycImage2 = tenant.kycImage2;
     _paymentStatus = tenant.paymentStatus;
+    _paidAmount = tenant.paidAmount;
   }
 
   @override
@@ -82,12 +84,17 @@ class TenantFormContentState extends State<TenantFormContent> {
         final tenant = _createTenant();
         if (!mounted) return;
         
-        // Store all required contexts before async operations
         final navigatorContext = context;
-        final scaffoldContext = context;
         await _saveTenant(tenant, navigatorContext);
         
         if (!mounted) return;
+
+        // Reset form state before navigation to prevent dropdown error
+        setState(() {
+          _selectedRoomId = null;
+          _selectedSection = null;
+        });
+        
         Navigator.of(navigatorContext).pop();
       } catch (e) {
         if (!mounted) return;
@@ -119,6 +126,7 @@ class TenantFormContentState extends State<TenantFormContent> {
       nextDueDate: DateTime(_joiningDate.year, _joiningDate.month + 1, _joiningDate.day),
       kycImage1: _kycImage1,
       kycImage2: _kycImage2,
+      paidAmount: _paymentStatus.toLowerCase() == 'partial' ? _paidAmount : null,
     );
   }
 
@@ -126,14 +134,17 @@ class TenantFormContentState extends State<TenantFormContent> {
     final tenantProvider = Provider.of<TenantProvider>(context, listen: false);
     final roomProvider = Provider.of<RoomProvider>(context, listen: false);
 
-    if (widget.tenant != null) {
-      if (_selectedRoomId != _oldRoomId || _selectedSection != _oldSection) {
-        await roomProvider.removeTenant(_oldRoomId!, _oldSection!);
-        await roomProvider.assignTenant(_selectedRoomId!, _selectedSection!, tenant.id!);
+    try {
+      if (widget.tenant != null) {
+        // For existing tenant, let TenantProvider handle both room and tenant updates
+        await tenantProvider.updateTenant(context, tenant);
+      } else {
+        // For new tenant, just add through TenantProvider which handles room assignment
+        await tenantProvider.addTenant(context, tenant);
       }
-      await tenantProvider.updateTenant(context, tenant);
-    } else {
-      await tenantProvider.addTenant(context, tenant);
+    } catch (e) {
+      // Re-throw the error to be handled by the form's error handler
+      rethrow;
     }
   }
 
@@ -175,14 +186,23 @@ class TenantFormContentState extends State<TenantFormContent> {
             paymentStatus: _paymentStatus,
             joiningDate: _joiningDate,
             isSubmitting: _isSubmitting,
+            paidAmount: _paidAmount,
             onPaymentStatusChanged: (status) {
               setState(() {
                 _paymentStatus = status ?? 'Paid';
+                if (_paymentStatus != 'Partial') {
+                  _paidAmount = null;
+                }
               });
             },
             onJoiningDateChanged: (date) {
               setState(() {
                 _joiningDate = date;
+              });
+            },
+            onPaidAmountChanged: (amount) {
+              setState(() {
+                _paidAmount = amount;
               });
             },
           ),

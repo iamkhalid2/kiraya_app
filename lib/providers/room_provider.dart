@@ -132,22 +132,35 @@ class RoomProvider with ChangeNotifier {
 
     try {
       final room = _getRoomById(roomId);
+      
+      // Check if this tenant is already in this section
+      final section = room.getSection(sectionId);
+      if (section.tenantId == tenantId) {
+        return; // Already assigned to this section, no need to update
+      }
+
+      // Check if room can accept the tenant
       if (!room.canAcceptTenant(tenantId)) {
         throw Exception('Room is full');
       }
 
-      final section = room.getSection(sectionId);
+      // Check if section is available
       if (section.isOccupied && section.tenantId != tenantId) {
         throw Exception('Section is occupied by another tenant');
       }
 
+      // Update the section with the new tenant
       room.updateSection(
         sectionId,
         isOccupied: true,
         tenantId: tenantId,
       );
 
+      // Save changes to Firestore
       await updateRoom(room);
+      
+      // Update cache
+      _tenantRoomCache[tenantId] = MapEntry(roomId, sectionId);
     } catch (e) {
       throw ErrorHandler.getFormattedErrorMessage(e);
     }

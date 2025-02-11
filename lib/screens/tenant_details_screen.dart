@@ -41,18 +41,51 @@ class TenantDetailsScreen extends StatelessWidget {
       debugPrint('Could not launch SMS: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not send SMS')),
+          const SnackBar(content: Text('Could not send message')),
         );
       }
     }
   }
 
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
+  Future<void> _markAsPaid(BuildContext context) async {
+    try {
+      final tenantProvider = Provider.of<TenantProvider>(context, listen: false);
+      final now = DateTime.now();
+      final updatedTenant = tenant.copyWith(
+        paymentStatus: 'Paid',
+        paidAmount: null, // Clear partial payment amount
+        nextDueDate: DateTime(now.year, now.month + 1, now.day), // Set next due date to one month from now
+      );
+      await tenantProvider.updateTenant(context, updatedTenant);
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Marked as paid successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showDeleteConfirmation(BuildContext context) async {
+    return showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Tenant'),
-        content: const Text('Are you sure you want to delete this tenant?'),
+        content: const Text(
+          'Are you sure you want to delete this tenant? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -61,13 +94,11 @@ class TenantDetailsScreen extends StatelessWidget {
           TextButton(
             onPressed: () async {
               try {
-                if (tenant.id != null) {
-                  await Provider.of<TenantProvider>(context, listen: false)
-                      .deleteTenant(context, tenant.id!);
-                  if (context.mounted) {
-                    Navigator.of(ctx).pop();
-                    Navigator.of(context).pop();
-                  }
+                await Provider.of<TenantProvider>(context, listen: false)
+                    .deleteTenant(context, tenant.id!);
+                if (context.mounted) {
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).pop();
                 }
               } catch (e) {
                 if (context.mounted) {
@@ -171,6 +202,20 @@ class TenantDetailsScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (tenant.paymentStatus.toLowerCase() != 'paid') ...[
+                      const Divider(),
+                      Center(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _markAsPaid(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                          icon: const Icon(Icons.check_circle),
+                          label: const Text('Mark as Paid'),
+                        ),
+                      ),
+                    ],
                     const Divider(),
                     ListTile(
                       title: const Text('Rent Amount'),
@@ -179,6 +224,27 @@ class TenantDetailsScreen extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
+                    if (tenant.paymentStatus.toLowerCase() == 'partial') ...[
+                      const Divider(),
+                      ListTile(
+                        title: const Text('Paid Amount'),
+                        trailing: Text(
+                          '₹${tenant.paidAmount?.toStringAsFixed(2) ?? "0.00"}',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.green,
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        title: const Text('Due Amount'),
+                        trailing: Text(
+                          '₹${tenant.dueAmount.toStringAsFixed(2)}',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                    ],
                     const Divider(),
                     ListTile(
                       title: const Text('Initial Deposit'),

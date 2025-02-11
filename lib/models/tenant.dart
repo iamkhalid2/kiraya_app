@@ -13,9 +13,14 @@ class Tenant {
   DateTime nextDueDate;
   String? kycImage1;  // Will store image path/url later
   String? kycImage2;  // Will store image path/url later
+  double? paidAmount;  // New field for partial payments
 
   // For displaying room number in UI
   String get roomNumber => roomId;
+
+  double get dueAmount => paymentStatus.toLowerCase() == 'partial' 
+    ? rentAmount - (paidAmount ?? 0) 
+    : rentAmount;
 
   Tenant({
     this.id,
@@ -30,6 +35,7 @@ class Tenant {
     required this.nextDueDate,
     this.kycImage1,
     this.kycImage2,
+    this.paidAmount,
   });
 
   Map<String, dynamic> toMap() {
@@ -45,6 +51,7 @@ class Tenant {
       'nextDueDate': Timestamp.fromDate(nextDueDate),
       'kycImage1': kycImage1,
       'kycImage2': kycImage2,
+      'paidAmount': paidAmount,
     };
   }
 
@@ -62,6 +69,7 @@ class Tenant {
       nextDueDate: (map['nextDueDate'] as Timestamp).toDate(),
       kycImage1: map['kycImage1'] as String?,
       kycImage2: map['kycImage2'] as String?,
+      paidAmount: map['paidAmount'] != null ? (map['paidAmount'] as num).toDouble() : null,
     );
   }
 
@@ -78,6 +86,7 @@ class Tenant {
     DateTime? nextDueDate,
     String? kycImage1,
     String? kycImage2,
+    double? paidAmount,
   }) {
     return Tenant(
       id: id ?? this.id,
@@ -92,6 +101,7 @@ class Tenant {
       nextDueDate: nextDueDate ?? this.nextDueDate,
       kycImage1: kycImage1 ?? this.kycImage1,
       kycImage2: kycImage2 ?? this.kycImage2,
+      paidAmount: paidAmount ?? this.paidAmount,
     );
   }
 }

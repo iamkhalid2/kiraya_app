@@ -75,7 +75,7 @@ class _TenantListScreenState extends State<TenantListScreen> {
           ],
         ),
         trailing: SizedBox(
-          width: 80,
+          width: 100,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -83,21 +83,37 @@ class _TenantListScreenState extends State<TenantListScreen> {
                 '₹${tenant.rentAmount.toStringAsFixed(0)}',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: statusColor.withAlpha(26),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  tenant.paymentStatus,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 11,
+              if (tenant.paymentStatus.toLowerCase() == 'partial')
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.arrow_downward, size: 12, color: statusColor),
+                    Text(
+                      '₹${tenant.dueAmount.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: statusColor.withAlpha(26),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  textAlign: TextAlign.center,
+                  child: Text(
+                    tenant.paymentStatus,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 11,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              ),
             ],
           ),
         ),

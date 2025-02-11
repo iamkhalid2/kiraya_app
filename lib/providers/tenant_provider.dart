@@ -145,7 +145,7 @@ class TenantProvider with ChangeNotifier {
       }
 
       // Validate new room assignment if changed
-      if (oldTenant.roomId != tenant.roomId) {
+      if (oldTenant.roomId != tenant.roomId || oldTenant.section != tenant.section) {
         if (!roomProvider.rooms.any((room) => room.id == tenant.roomId)) {
           throw Exception('Selected room no longer exists. Please choose a different room.');
         }
@@ -154,16 +154,17 @@ class TenantProvider with ChangeNotifier {
         if (!newRoom.hasSection(tenant.section)) {
           throw Exception('Selected section is not valid for this room.');
         }
-      }
 
-      // If room or section changed, update room occupancy
-      if (oldTenant.roomId != tenant.roomId || oldTenant.section != tenant.section) {
-        await roomProvider.removeTenant(oldTenant.roomId, oldTenant.section);
+        // Update tenant data first
+        await _firestoreService.updateTenant(tenant.id!, tenant.toMap());
+
+        // Then update room assignments
         await roomProvider.assignTenant(tenant.roomId, tenant.section, tenant.id!);
+        await roomProvider.removeTenant(oldTenant.roomId, oldTenant.section);
+      } else {
+        // If room/section hasn't changed, just update tenant data
+        await _firestoreService.updateTenant(tenant.id!, tenant.toMap());
       }
-
-      // Update tenant data
-      await _firestoreService.updateTenant(tenant.id!, tenant.toMap());
     } catch (e) {
       debugPrint('Error updating tenant: $e');
       rethrow;

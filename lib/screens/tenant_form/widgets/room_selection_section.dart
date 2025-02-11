@@ -48,17 +48,24 @@ class RoomSelectionSection extends StatelessWidget {
           return !room.isFull;
         }).toList();
 
+        // Check if the selected room is still available
+        final selectedRoomStillAvailable = selectedRoomId != null && 
+          availableRooms.any((room) => room.id == selectedRoomId);
+
         // Get available sections for the selected room
         List<String> availableSections = [];
-        if (selectedRoomId != null) {
+        if (selectedRoomId != null && selectedRoomStillAvailable) {
           final selectedRoom = rooms.firstWhere(
             (room) => room.id == selectedRoomId,
-            orElse: () => throw Exception('Selected room not found'),
           );
           availableSections = selectedRoom.getAvailableSections(
             currentTenantId: oldRoomId == selectedRoomId ? oldSection : null,
           );
         }
+
+        // Check if the selected section is still available
+        final selectedSectionStillAvailable = selectedSection != null &&
+            availableSections.contains(selectedSection);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -72,7 +79,7 @@ class RoomSelectionSection extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: selectedRoomId,
+              value: selectedRoomStillAvailable ? selectedRoomId : null,
               decoration: const InputDecoration(
                 labelText: 'Room Number',
                 border: OutlineInputBorder(),
@@ -94,10 +101,10 @@ class RoomSelectionSection extends StatelessWidget {
                 return null;
               },
             ),
-            if (selectedRoomId != null) ...[
+            if (selectedRoomId != null && selectedRoomStillAvailable) ...[
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: selectedSection,
+                value: selectedSectionStillAvailable ? selectedSection : null,
                 decoration: const InputDecoration(
                   labelText: 'Room Section',
                   border: OutlineInputBorder(),
