@@ -21,8 +21,52 @@ class RoomGridScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Room Management'),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(120),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          color: Theme.of(context).primaryColor.withOpacity(0.1),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Room Management',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Consumer<RoomProvider>(
+                        builder: (context, roomProvider, _) {
+                          final totalRooms = roomProvider.rooms.length;
+                          return Text(
+                            '$totalRooms Active Room${totalRooms != 1 ? 's' : ''}',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context).primaryColor.withOpacity(0.8),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  IconButton.filled(
+                    onPressed: () => _showAddRoomModal(context),
+                    icon: const Icon(Icons.add),
+                    tooltip: 'Add Room',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
       ),
       body: Consumer<RoomProvider>(
         builder: (context, roomProvider, child) {
@@ -35,7 +79,7 @@ class RoomGridScreen extends StatelessWidget {
           }
 
           final rooms = roomProvider.rooms;
-          
+
           if (rooms.isEmpty) {
             return Center(
               child: Column(
@@ -82,10 +126,6 @@ class RoomGridScreen extends StatelessWidget {
             },
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddRoomModal(context),
-        child: const Icon(Icons.add),
       ),
     );
   }

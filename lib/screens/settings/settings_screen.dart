@@ -21,7 +21,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    // Set initial value
     final settings = context.read<UserSettingsProvider>().settings;
     _roomsController.text = settings.totalRooms.toString();
   }
@@ -75,95 +74,128 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Form(
-            key: _formKey,
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Property Settings',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(120),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          color: Theme.of(context).primaryColor.withOpacity(0.1),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Settings',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Consumer<RoomProvider>(
-                      builder: (context, roomProvider, _) {
-                        final currentRoomCount = roomProvider.rooms.length;
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            TextFormField(
-                              controller: _roomsController,
-                              enabled: !_isSaving,
-                              decoration: InputDecoration(
-                                labelText: 'Total Rooms',
-                                hintText: 'Enter total number of rooms',
-                                border: const OutlineInputBorder(),
-                                helperText: 'Current room count: $currentRoomCount',
+                      const SizedBox(height: 4),
+                      Text(
+                        'Configure Your Property',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).primaryColor.withOpacity(0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.logout),
+                    onPressed: _signOut,
+                    tooltip: 'Sign Out',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Form(
+              key: _formKey,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Property Settings',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Consumer<RoomProvider>(
+                        builder: (context, roomProvider, _) {
+                          final currentRoomCount = roomProvider.rooms.length;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TextFormField(
+                                controller: _roomsController,
+                                enabled: !_isSaving,
+                                decoration: InputDecoration(
+                                  labelText: 'Total Rooms',
+                                  hintText: 'Enter total number of rooms',
+                                  border: const OutlineInputBorder(),
+                                  helperText: 'Current room count: $currentRoomCount',
+                                ),
+                                keyboardType: TextInputType.number,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter total rooms';
+                                  }
+                                  final rooms = int.tryParse(value);
+                                  if (rooms == null) {
+                                    return 'Please enter a valid number';
+                                  }
+                                  if (rooms <= 0) {
+                                    return 'Total rooms must be greater than 0';
+                                  }
+                                  if (rooms < currentRoomCount) {
+                                    return 'Cannot set limit below current room count ($currentRoomCount)';
+                                  }
+                                  return null;
+                                },
                               ),
-                              keyboardType: TextInputType.number,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter total rooms';
-                                }
-                                final rooms = int.tryParse(value);
-                                if (rooms == null) {
-                                  return 'Please enter a valid number';
-                                }
-                                if (rooms <= 0) {
-                                  return 'Total rooms must be greater than 0';
-                                }
-                                if (rooms < currentRoomCount) {
-                                  return 'Cannot set limit below current room count ($currentRoomCount)';
-                                }
-                                return null;
-                              },
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isSaving ? null : _updateTotalRooms,
-                        child: _isSaving
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Text('Save'),
+                            ],
+                          );
+                        },
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isSaving ? null : _updateTotalRooms,
+                          child: _isSaving
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Text('Save'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: _isSaving ? null : _signOut,
-            icon: const Icon(Icons.logout),
-            label: const Text('Sign Out'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
