@@ -14,7 +14,22 @@ class RoomTile extends StatelessWidget {
     if (!section.isOccupied) {
       return Colors.grey.shade200;  // Vacant
     }
-    return Colors.green.shade100;  // Default to paid for now
+    return Colors.green.shade100;
+  }
+
+  double _getSectionSize(BuildContext context, BoxConstraints constraints, RoomType type) {
+    final baseSize = constraints.maxWidth / 2 - 12;
+    return switch (type) {
+      RoomType.single || RoomType.double => baseSize,
+      RoomType.triple || RoomType.quad => baseSize * 0.65, // Reduced to 65% for better fit
+    };
+  }
+
+  EdgeInsetsGeometry _getSectionPadding(RoomType type) {
+    return switch (type) {
+      RoomType.single || RoomType.double => const EdgeInsets.all(16),
+      RoomType.triple || RoomType.quad => const EdgeInsets.all(8), // Less padding for triple and quad
+    };
   }
 
   @override
@@ -70,16 +85,14 @@ class RoomTile extends StatelessWidget {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: _getSectionPadding(room.type),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    // Calculate dimensions for section circles
-                    final double size = constraints.maxWidth / 2 - 12;
+                    final size = _getSectionSize(context, constraints, room.type);
                     
-                    // Create grid of sections
                     return Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                      spacing: room.type == RoomType.triple || room.type == RoomType.quad ? 4 : 8,
+                      runSpacing: room.type == RoomType.triple || room.type == RoomType.quad ? 4 : 8,
                       alignment: WrapAlignment.center,
                       children: room.sections.map((section) {
                         return SizedBox(
@@ -97,6 +110,9 @@ class RoomTile extends StatelessWidget {
                                     style: theme.textTheme.titleLarge?.copyWith(
                                       color: Colors.black54,
                                       fontWeight: FontWeight.bold,
+                                      fontSize: room.type == RoomType.triple || room.type == RoomType.quad 
+                                          ? 16 // Even smaller font for triple and quad
+                                          : null,
                                     ),
                                   ),
                                   if (section.isOccupied && section.tenantName != null)
@@ -104,6 +120,9 @@ class RoomTile extends StatelessWidget {
                                       section.tenantName!,
                                       style: theme.textTheme.bodySmall?.copyWith(
                                         color: Colors.black45,
+                                        fontSize: room.type == RoomType.triple || room.type == RoomType.quad 
+                                            ? 9 // Even smaller font for triple and quad
+                                            : null,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
