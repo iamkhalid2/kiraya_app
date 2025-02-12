@@ -17,8 +17,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
     setState(() => _isLoading = true);
 
     try {
-      await context.read<AuthProvider>().signInWithGoogle();
+      final result = await context.read<AuthProvider>().signInWithGoogle();
+      if (result == null) {
+        if (mounted) {
+          ErrorHandler.showError(context, 'Google Sign In was cancelled or failed');
+        }
+      }
     } catch (e) {
+      debugPrint('Google Sign In Error: $e');
       if (mounted) {
         ErrorHandler.showError(context, e.toString());
       }
