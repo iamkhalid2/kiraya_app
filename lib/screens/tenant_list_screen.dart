@@ -121,7 +121,7 @@ class _TenantListScreenState extends State<TenantListScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => TenantDetailsScreen(tenant: tenant),
+              builder: (context) => TenantDetailsScreen(tenantId: tenant.id!),
             ),
           );
         },

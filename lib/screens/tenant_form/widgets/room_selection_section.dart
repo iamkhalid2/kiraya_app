@@ -58,14 +58,22 @@ class RoomSelectionSection extends StatelessWidget {
           final selectedRoom = rooms.firstWhere(
             (room) => room.id == selectedRoomId,
           );
+          // Only pass currentTenantId if we're staying in the same room
+          final isEditingSameRoom = oldRoomId != null && selectedRoomId == oldRoomId;
           availableSections = selectedRoom.getAvailableSections(
-            currentTenantId: oldRoomId == selectedRoomId ? oldSection : null,
+            currentTenantId: isEditingSameRoom ? oldSection : null,
           );
+          
+          // If editing and room hasn't changed, keep the original section in the list
+          if (isEditingSameRoom && oldSection != null && !availableSections.contains(oldSection)) {
+            availableSections = List<String>.from([...availableSections, oldSection]);
+          }
         }
 
-        // Check if the selected section is still available
+        // Check if the selected section is still available or is the original section
         final selectedSectionStillAvailable = selectedSection != null &&
-            availableSections.contains(selectedSection);
+            (availableSections.contains(selectedSection) || 
+             (oldSection == selectedSection && selectedRoomId == oldRoomId));
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -91,8 +99,11 @@ class RoomSelectionSection extends StatelessWidget {
                 );
               }).toList(),
               onChanged: isSubmitting ? null : (value) {
-                onRoomSelected(value);
-                onSectionSelected(null); // Reset section when room changes
+                // Only reset section if room actually changed
+                if (value != selectedRoomId) {
+                  onRoomSelected(value);
+                  onSectionSelected(null);
+                }
               },
               validator: (value) {
                 if (value == null || value.isEmpty) {

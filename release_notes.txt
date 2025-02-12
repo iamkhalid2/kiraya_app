@@ -1,0 +1,10 @@
+Initial Release:
+
+• Manage your rental property with ease
+• Add and track multiple rooms with different occupancy types
+• Manage tenants with detailed profiles and KYC documents
+• Track rent payments and payment status
+• View property analytics and income statistics
+• Real-time dashboard with occupancy and collection rates
+• Secure Google Sign-in authentication
+• Cloud backup of all your data

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/room.dart';
 import '../../providers/room_provider.dart';
 import '../../providers/tenant_provider.dart';
+import '../tenant_details_screen.dart';
 
 class RoomDetailsScreen extends StatelessWidget {
   final Room room;
@@ -21,54 +22,6 @@ class RoomDetailsScreen extends StatelessWidget {
     };
   }
 
-  Future<void> _showDeleteConfirmation(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Room'),
-        content: Text('Are you sure you want to delete Room ${room.number}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !context.mounted) return;
-
-    try {
-      await Provider.of<RoomProvider>(context, listen: false)
-          .deleteRoom(room.id!);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Room deleted successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -76,44 +29,22 @@ class RoomDetailsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Room ${room.number}'),
-        actions: [
-          if (room.isEmpty)
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => _showDeleteConfirmation(context),
-              tooltip: 'Delete Room',
-            ),
-        ],
       ),
       body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               padding: const EdgeInsets.all(16),
               color: theme.primaryColor.withOpacity(0.1),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    room.type.name == 'single'
-                        ? Icons.person
-                        : room.type.name == 'double'
-                            ? Icons.people
-                            : room.type.name == 'triple'
-                                ? Icons.people_outline
-                                : Icons.groups,
-                    size: 48,
-                    color: theme.primaryColor,
+                  Text(
+                    'Room Type: ${room.type.name.toUpperCase()}',
+                    style: theme.textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    '${room.type.name.toUpperCase()} ROOM',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
                   Text(
                     '${room.occupiedCount}/${room.occupantLimit} Occupied',
                     style: theme.textTheme.bodyMedium?.copyWith(
@@ -182,47 +113,56 @@ class RoomDetailsScreen extends StatelessWidget {
                           ),
                           if (tenant != null) ...[
                             const Divider(),
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Tenant Details',
-                                        style: theme.textTheme.titleMedium,
-                                      ),
-                                      Chip(
-                                        label: Text(tenant.paymentStatus),
-                                        backgroundColor: _getStatusColor(tenant.paymentStatus)
-                                            .withOpacity(0.1),
-                                        labelStyle: TextStyle(
-                                          color: _getStatusColor(tenant.paymentStatus),
+                            InkWell(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => TenantDetailsScreen(tenantId: tenant.id!),
+                                  ),
+                                );
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Tenant Details',
+                                          style: theme.textTheme.titleMedium,
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  _DetailRow(
-                                    label: 'Name',
-                                    value: tenant.name,
-                                  ),
-                                  _DetailRow(
-                                    label: 'Phone',
-                                    value: tenant.phoneNumber,
-                                  ),
-                                  _DetailRow(
-                                    label: 'Rent',
-                                    value: '₹${tenant.rentAmount}',
-                                  ),
-                                  _DetailRow(
-                                    label: 'Next Due',
-                                    value: tenant.nextDueDate.toString().split(' ')[0],
-                                    isOverdue: tenant.nextDueDate.isBefore(DateTime.now()),
-                                  ),
-                                ],
+                                        Chip(
+                                          label: Text(tenant.paymentStatus),
+                                          backgroundColor: _getStatusColor(tenant.paymentStatus)
+                                              .withOpacity(0.1),
+                                          labelStyle: TextStyle(
+                                            color: _getStatusColor(tenant.paymentStatus),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _DetailRow(
+                                      label: 'Name',
+                                      value: tenant.name,
+                                    ),
+                                    _DetailRow(
+                                      label: 'Phone',
+                                      value: tenant.phoneNumber,
+                                    ),
+                                    _DetailRow(
+                                      label: 'Rent',
+                                      value: '₹${tenant.rentAmount}',
+                                    ),
+                                    _DetailRow(
+                                      label: 'Next Due',
+                                      value: tenant.nextDueDate.toString().split(' ')[0],
+                                      isOverdue: tenant.nextDueDate.isBefore(DateTime.now()),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -233,7 +173,6 @@ class RoomDetailsScreen extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -263,7 +202,6 @@ class _DetailRow extends StatelessWidget {
             label,
             style: const TextStyle(
               color: Colors.black54,
-              fontWeight: FontWeight.w500,
             ),
           ),
           Text(
