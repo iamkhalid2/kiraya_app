@@ -8,11 +8,11 @@ class AuthService {
   static const String emailInUseError = 'An account already exists for that email.';
   static const String userNotFoundError = 'No user found for that email.';
   static const String wrongPasswordError = 'Wrong password provided for that user.';
+  
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email'],
-    clientId: '190795649881-75oncp5gms7hh9opcn4saf4nk665l2ve.apps.googleusercontent.com'
+    scopes: ['email', 'profile'],
   );
 
   // Stream to listen to auth state changes

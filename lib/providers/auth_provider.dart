@@ -62,22 +62,33 @@ class AuthProvider with ChangeNotifier {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
+        debugPrint('Google Sign In was cancelled by user');
         _setLoading(false);
         return null;
       }
 
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      try {
+        // Obtain the auth details from the request
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        debugPrint('Got Google Auth tokens - Access Token: ${googleAuth.accessToken != null}');
 
-      // Create a new credential
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+        // Create a new credential
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
 
-      // Once signed in, return the UserCredential
-      return await _auth.signInWithCredential(credential);
+        // Once signed in, return the UserCredential
+        final userCredential = await _auth.signInWithCredential(credential);
+        debugPrint('Successfully signed in with Google: ${userCredential.user?.uid}');
+        return userCredential;
+      } catch (authError) {
+        debugPrint('Error during Google authentication: $authError');
+        await _googleSignIn.signOut(); // Clean up on error
+        throw _handleAuthError(authError);
+      }
     } catch (e) {
+      debugPrint('Error in signInWithGoogle: $e');
       throw _handleAuthError(e);
     } finally {
       _setLoading(false);
