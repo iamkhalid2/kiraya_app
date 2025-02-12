@@ -2,6 +2,7 @@
     package="dev.mkhalid.kiraya">
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="Kiraya"
         android:name="${applicationName}"
@@ -53,5 +54,8 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="sms" />
         </intent>
+        <!-- Add these for Google Sign-In -->
+        <package android:name="com.google.android.gms" />
+        <package android:name="com.android.vending" />
     </queries>
 </manifest>

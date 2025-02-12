@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: '190795649881-f14tl88k9sr2590pocthc1cge4a6p3qk.apps.googleusercontent.com', /* Web client ID */
+    scopes: ['email', 'profile'],
+  );
   bool _isLoading = false;
   bool _isInitialized = false;
 
@@ -58,8 +62,11 @@ class AuthProvider with ChangeNotifier {
   Future<UserCredential?> signInWithGoogle() async {
     _setLoading(true);
     try {
-      // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      // First, try to sign in silently (if user has previously authenticated)
+      GoogleSignInAccount? googleUser = await _googleSignIn.signInSilently();
+      
+      // If silent sign-in fails, try interactive sign-in
+      googleUser ??= await _googleSignIn.signIn();
 
       if (googleUser == null) {
         debugPrint('Google Sign In was cancelled by user');
@@ -70,7 +77,14 @@ class AuthProvider with ChangeNotifier {
       try {
         // Obtain the auth details from the request
         final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-        debugPrint('Got Google Auth tokens - Access Token: ${googleAuth.accessToken != null}');
+        debugPrint('Got Google Auth tokens - Access Token: ${googleAuth.accessToken != null}, ID Token: ${googleAuth.idToken != null}');
+
+        if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+          throw FirebaseAuthException(
+            code: 'invalid_google_auth',
+            message: 'Failed to get valid Google authentication tokens.',
+          );
+        }
 
         // Create a new credential
         final credential = GoogleAuthProvider.credential(
@@ -84,11 +98,23 @@ class AuthProvider with ChangeNotifier {
         return userCredential;
       } catch (authError) {
         debugPrint('Error during Google authentication: $authError');
-        await _googleSignIn.signOut(); // Clean up on error
+        // Clean up on error
+        try {
+          await _googleSignIn.signOut();
+          await _googleSignIn.disconnect();
+        } catch (e) {
+          debugPrint('Error during Google Sign In cleanup: $e');
+        }
         throw _handleAuthError(authError);
       }
     } catch (e) {
       debugPrint('Error in signInWithGoogle: $e');
+      if (e is PlatformException && e.code == 'sign_in_failed') {
+        // Handle API Exception 10 specifically
+        await _googleSignIn.signOut();
+        await _googleSignIn.disconnect();
+        throw 'Google Sign In failed. Please try again or check your internet connection.';
+      }
       throw _handleAuthError(e);
     } finally {
       _setLoading(false);
