@@ -1,4 +1,5 @@
 import '../models/tenant.dart';
+import '../models/room.dart';
 
 class StatsService {
   static int getTotalTenants(List<Tenant> tenants) {
@@ -6,18 +7,22 @@ class StatsService {
   }
 
   static double getTotalMonthlyIncome(List<Tenant> tenants) {
-    return tenants.fold(0.0, (sum, tenant) => sum + tenant.rentAmount);
+    return tenants.fold(0.0, (sum, tenant) {
+      if (tenant.paymentStatus.toLowerCase() == 'paid') {
+        return sum + tenant.rentAmount;
+      } else if (tenant.paymentStatus.toLowerCase() == 'partial' && tenant.paidAmount != null) {
+        return sum + tenant.paidAmount!;
+      }
+      return sum;
+    });
   }
 
   static double getCollectionRate(List<Tenant> tenants) {
     if (tenants.isEmpty) return 0.0;
-    
-    final paidTenants = tenants.where((tenant) {
-      final status = tenant.paymentStatus.toLowerCase();
-      return status == 'paid' || status == 'partial';
-    }).length;
-    
-    return (paidTenants / tenants.length) * 100;
+    final paidOrPartial = tenants.where((tenant) =>
+      tenant.paymentStatus.toLowerCase() == 'paid' ||
+      tenant.paymentStatus.toLowerCase() == 'partial').length;
+    return (paidOrPartial / tenants.length) * 100;
   }
 
   static Map<String, int> getPaymentStatusDistribution(List<Tenant> tenants) {
@@ -62,9 +67,16 @@ class StatsService {
     return tenants.fold(0.0, (sum, tenant) => sum + tenant.initialDeposit);
   }
 
-  static double getVacancyRate(List<Tenant> tenants, int totalRooms) {
-    if (totalRooms == 0) return 0.0;
-    return ((totalRooms - tenants.length) / totalRooms) * 100;
+  static double getVacancyRate(List<Tenant> tenants, List<Room> rooms) {
+    // Count total sections across all active rooms
+    final totalSections = rooms.fold(0, (sum, room) => sum + room.sections.length);
+    if (totalSections == 0) return 0.0;
+    
+    // Count occupied sections
+    final occupiedSections = rooms.fold(0, (sum, room) => 
+      sum + room.sections.where((section) => section.isOccupied).length);
+    
+    return ((totalSections - occupiedSections) / totalSections) * 100;
   }
 
   static List<MapEntry<DateTime, double>> getRevenueHistory(List<Tenant> tenants, {int months = 6}) {
@@ -79,8 +91,8 @@ class StatsService {
 
     // Calculate revenue for each month
     for (var tenant in tenants) {
+      // For paid tenants, add full rent amount
       if (tenant.paymentStatus.toLowerCase() == 'paid') {
-        // Look at the current month since nextDueDate is for next payment
         final paymentMonth = DateTime(
           tenant.nextDueDate.year, 
           tenant.nextDueDate.month - 1,
@@ -89,15 +101,16 @@ class StatsService {
         if (history.containsKey(paymentMonth)) {
           history[paymentMonth] = (history[paymentMonth] ?? 0) + tenant.rentAmount;
         }
-      } else if (tenant.paymentStatus.toLowerCase() == 'partial') {
-        // Add half rent for partial payments
+      } 
+      // For partial payments, only add the paid amount
+      else if (tenant.paymentStatus.toLowerCase() == 'partial' && tenant.paidAmount != null) {
         final paymentMonth = DateTime(
           tenant.nextDueDate.year, 
           tenant.nextDueDate.month - 1,
         );
         
         if (history.containsKey(paymentMonth)) {
-          history[paymentMonth] = (history[paymentMonth] ?? 0) + (tenant.rentAmount * 0.5);
+          history[paymentMonth] = (history[paymentMonth] ?? 0) + tenant.paidAmount!;
         }
       }
     }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../providers/tenant_provider.dart';
+import '../../providers/room_provider.dart';
 import '../../providers/user_settings_provider.dart';
 import '../../services/stats_service.dart';
 import 'widgets/stat_card.dart';
@@ -14,9 +15,9 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tenantProvider = Provider.of<TenantProvider>(context);
-    final userSettings = Provider.of<UserSettingsProvider>(context).settings;
+    final roomProvider = Provider.of<RoomProvider>(context);
 
-    if (!tenantProvider.isInitialized) {
+    if (!tenantProvider.isInitialized || !roomProvider.isInitialized) {
       return Scaffold(
         appBar: AppBar(title: const Text('Dashboard')),
         body: const Center(child: CircularProgressIndicator()),
@@ -24,10 +25,11 @@ class DashboardScreen extends StatelessWidget {
     }
 
     final tenants = tenantProvider.tenants;
+    final rooms = roomProvider.rooms;
     final totalTenants = StatsService.getTotalTenants(tenants);
     final monthlyIncome = StatsService.getTotalMonthlyIncome(tenants);
     final collectionRate = StatsService.getCollectionRate(tenants);
-    final vacancyRate = StatsService.getVacancyRate(tenants, userSettings.totalRooms);
+    final vacancyRate = StatsService.getVacancyRate(tenants, rooms);
     final paymentDistribution = StatsService.getPaymentStatusDistribution(tenants);
     final revenueHistory = StatsService.getRevenueHistory(tenants);
 
@@ -267,20 +269,20 @@ class DashboardScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildStatusIndicator(
-                          'Paid',
-                          paymentDistribution['paid'] ?? 0,
-                          theme.colorScheme.secondary,
+                        _PaymentStatusIndicator(
+                          label: 'Paid',
+                          value: paymentDistribution['paid'] ?? 0,
+                          color: Colors.green,
                         ),
-                        _buildStatusIndicator(
-                          'Pending',
-                          paymentDistribution['pending'] ?? 0,
-                          theme.colorScheme.error,
+                        _PaymentStatusIndicator(
+                          label: 'Pending',
+                          value: paymentDistribution['pending'] ?? 0,
+                          color: Colors.red,
                         ),
-                        _buildStatusIndicator(
-                          'Partial',
-                          paymentDistribution['partial'] ?? 0,
-                          theme.colorScheme.tertiary,
+                        _PaymentStatusIndicator(
+                          label: 'Partial',
+                          value: paymentDistribution['partial'] ?? 0,
+                          color: Colors.orange,
                         ),
                       ],
                     ),
@@ -293,24 +295,37 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildStatusIndicator(String label, int count, Color color) {
+class _PaymentStatusIndicator extends StatelessWidget {
+  final String label;
+  final int value;
+  final Color color;
+
+  const _PaymentStatusIndicator({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         Container(
-          width: 60,
-          height: 60,
+          width: 64,
+          height: 64,
           decoration: BoxDecoration(
-            color: color.withAlpha(26),
+            color: color.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Center(
             child: Text(
-              count.toString(),
+              value.toString(),
               style: TextStyle(
-                color: color,
-                fontSize: 20,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
+                color: color,
               ),
             ),
           ),
@@ -319,8 +334,9 @@ class DashboardScreen extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
             color: color,
-            fontWeight: FontWeight.w500,
           ),
         ),
       ],
