@@ -85,6 +85,7 @@ class TenantDetailsScreen extends StatelessWidget {
   Future<void> _showDeleteConfirmation(BuildContext context, Tenant tenant) async {
     return showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Tenant'),
         content: const Text(
@@ -98,15 +99,14 @@ class TenantDetailsScreen extends StatelessWidget {
           TextButton(
             onPressed: () async {
               try {
+                Navigator.of(ctx).pop(); // Close dialog first
                 await Provider.of<TenantProvider>(context, listen: false)
-                    .deleteTenant(context, tenantId);
+                    .deleteTenant(context, tenant.id!);
                 if (context.mounted) {
-                  Navigator.of(ctx).pop();
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(); // Then pop the details screen
                 }
               } catch (e) {
                 if (context.mounted) {
-                  Navigator.of(ctx).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Error deleting tenant: $e')),
                   );
@@ -121,16 +121,12 @@ class TenantDetailsScreen extends StatelessWidget {
   }
 
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'paid':
-        return Colors.green;
-      case 'pending':
-        return Colors.red;
-      case 'partial':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
+    return switch (status.toLowerCase()) {
+      'paid' => Colors.green,
+      'pending' => Colors.red,
+      'partial' => Colors.orange,
+      _ => Colors.grey,
+    };
   }
 
   @override
@@ -139,8 +135,25 @@ class TenantDetailsScreen extends StatelessWidget {
       builder: (context, tenantProvider, _) {
         final tenant = tenantProvider.tenants.firstWhere(
           (t) => t.id == tenantId,
-          orElse: () => throw Exception('Tenant not found'),
+          orElse: () => Tenant(
+            id: tenantId,
+            name: 'Loading...',
+            roomId: '',
+            section: '',
+            rentAmount: 0,
+            initialDeposit: 0,
+            paymentStatus: '',
+            phoneNumber: '',
+            joiningDate: DateTime.now(),
+            nextDueDate: DateTime.now(),
+          ),
         );
+
+        if (tenant.name == 'Loading...') {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
         return Scaffold(
           appBar: AppBar(
