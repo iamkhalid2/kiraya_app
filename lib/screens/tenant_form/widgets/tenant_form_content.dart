@@ -10,8 +10,15 @@ import 'kyc_documents_section.dart';
 
 class TenantFormContent extends StatefulWidget {
   final Tenant? tenant;
+  final String? preselectedRoomId;
+  final String? preselectedSection;
 
-  const TenantFormContent({super.key, this.tenant});
+  const TenantFormContent({
+    super.key, 
+    this.tenant,
+    this.preselectedRoomId,
+    this.preselectedSection,
+  });
 
   static TenantFormContentState? of(BuildContext context) {
     return context.findAncestorStateOfType<TenantFormContentState>();
@@ -45,6 +52,9 @@ class TenantFormContentState extends State<TenantFormContent> {
     super.initState();
     if (widget.tenant != null) {
       _initializeFromTenant();
+    } else if (widget.preselectedRoomId != null) {
+      _selectedRoomId = widget.preselectedRoomId;
+      _selectedSection = widget.preselectedSection;
     }
   }
 
@@ -132,18 +142,14 @@ class TenantFormContentState extends State<TenantFormContent> {
 
   Future<void> _saveTenant(Tenant tenant, BuildContext context) async {
     final tenantProvider = Provider.of<TenantProvider>(context, listen: false);
-    final roomProvider = Provider.of<RoomProvider>(context, listen: false);
 
     try {
       if (widget.tenant != null) {
-        // For existing tenant, let TenantProvider handle both room and tenant updates
         await tenantProvider.updateTenant(context, tenant);
       } else {
-        // For new tenant, just add through TenantProvider which handles room assignment
         await tenantProvider.addTenant(context, tenant);
       }
     } catch (e) {
-      // Re-throw the error to be handled by the form's error handler
       rethrow;
     }
   }

@@ -10,49 +10,31 @@ class RoomTile extends StatelessWidget {
     required this.room,
   });
 
-  Color _getSectionColor(Section section) {
-    if (!section.isOccupied) {
-      return Colors.grey.shade200;  // Vacant
-    }
-    return Colors.green.shade100;
-  }
-
-  double _getSectionSize(BuildContext context, BoxConstraints constraints, RoomType type) {
-    final baseSize = constraints.maxWidth / 2 - 12;
-    return switch (type) {
-      RoomType.single || RoomType.double => baseSize,
-      RoomType.triple || RoomType.quad => baseSize * 0.65, // Reduced to 65% for better fit
-    };
-  }
-
-  EdgeInsetsGeometry _getSectionPadding(RoomType type) {
-    return switch (type) {
-      RoomType.single || RoomType.double => const EdgeInsets.all(16),
-      RoomType.triple || RoomType.quad => const EdgeInsets.all(8), // Less padding for triple and quad
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => RoomDetailsScreen(room: room),
-          ),
-        );
-      },
-      child: Card(
-        clipBehavior: Clip.antiAlias,
+          MaterialPageRoute(builder: (context) => RoomDetailsScreen(room: room)),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Header with room number and type
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: theme.primaryColor.withOpacity(0.1),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withOpacity(0.1),
+                border: Border(
+                  bottom: BorderSide(
+                    color: theme.primaryColor.withOpacity(0.1),
+                  ),
+                ),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -63,10 +45,7 @@ class RoomTile extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: theme.primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -83,116 +62,134 @@ class RoomTile extends StatelessWidget {
                 ],
               ),
             ),
+
+            // Sections with dynamic layout
             Expanded(
-              child: Padding(
-                padding: _getSectionPadding(room.type),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final size = _getSectionSize(context, constraints, room.type);
-                    
-                    return Wrap(
-                      spacing: room.type == RoomType.triple || room.type == RoomType.quad ? 4 : 8,
-                      runSpacing: room.type == RoomType.triple || room.type == RoomType.quad ? 4 : 8,
-                      alignment: WrapAlignment.center,
-                      children: room.sections.map((section) {
-                        return SizedBox(
-                          width: size,
-                          height: size,
-                          child: Material(
-                            color: _getSectionColor(section),
-                            shape: const CircleBorder(),
-                            child: Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    section.id,
-                                    style: theme.textTheme.titleLarge?.copyWith(
-                                      color: Colors.black54,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: room.type == RoomType.triple || room.type == RoomType.quad 
-                                          ? 16 // Even smaller font for triple and quad
-                                          : null,
-                                    ),
-                                  ),
-                                  if (section.isOccupied && section.tenantName != null)
-                                    Text(
-                                      section.tenantName!,
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: Colors.black45,
-                                        fontSize: room.type == RoomType.triple || room.type == RoomType.quad 
-                                            ? 9 // Even smaller font for triple and quad
-                                            : null,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    );
-                  },
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: theme.primaryColor.withOpacity(0.05),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${room.occupiedCount}/${room.occupantLimit} Occupied',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (room.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Vacant',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  if (room.isFull)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Full',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.orange,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                ],
+              child: LayoutBuilder(
+                builder: (context, constraints) => _buildSections(constraints),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSections(BoxConstraints constraints) {
+    switch (room.type) {
+      case RoomType.quad:
+        return _buildQuadLayout(constraints);
+      case RoomType.triple:
+        return _buildTripleLayout(constraints);
+      default:
+        return _buildDefaultLayout(constraints);
+    }
+  }
+
+  Widget _buildQuadLayout(BoxConstraints constraints) {
+    final availableSize = constraints.maxWidth;
+    final itemSize = (availableSize - 24) / 2; // 24 for padding between items
+
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
+      padding: const EdgeInsets.all(12),
+      children: room.sections.map((section) {
+        final color = section.isOccupied ? Colors.orange : Colors.green;
+        return Container(
+          width: itemSize,
+          height: itemSize,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: color.withOpacity(0.3),
+              width: 2,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              section.id,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: color.shade700,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildTripleLayout(BoxConstraints constraints) {
+    final availableWidth = constraints.maxWidth;
+    final availableHeight = constraints.maxHeight;
+    final bottomPadding = availableHeight * 0.1; // 10% bottom padding
+    final topPadding = availableHeight * 0.05; // 5% top padding
+    final horizontalPadding = availableWidth * 0.1; // 10% side padding
+    
+    final circleSize = (availableWidth - (horizontalPadding * 2)) * 0.45; // 45% of available width
+
+    return Stack(
+      children: [
+        // Top circle
+        Positioned(
+          top: topPadding,
+          left: (availableWidth - circleSize) / 2,
+          child: _buildSectionCircle(room.sections[0], circleSize),
+        ),
+        // Bottom left circle
+        Positioned(
+          bottom: bottomPadding,
+          left: horizontalPadding,
+          child: _buildSectionCircle(room.sections[1], circleSize),
+        ),
+        // Bottom right circle
+        Positioned(
+          bottom: bottomPadding,
+          right: horizontalPadding,
+          child: _buildSectionCircle(room.sections[2], circleSize),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDefaultLayout(BoxConstraints constraints) {
+    final availableWidth = constraints.maxWidth;
+    final spacing = 8.0;
+    final itemWidth = (availableWidth - (spacing * (room.sections.length - 1) + 24)) / room.sections.length;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: room.sections.map((section) => _buildSectionCircle(section, itemWidth)).toList(),
+    );
+  }
+
+  Widget _buildSectionCircle(Section section, double size) {
+    final color = section.isOccupied ? Colors.orange : Colors.green;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 2,
+        ),
+      ),
+      child: Center(
+        child: Text(
+          section.id,
+          style: TextStyle(
+            fontSize: size > 40 ? 16 : 14,
+            fontWeight: FontWeight.bold,
+            color: color.shade700,
+          ),
         ),
       ),
     );

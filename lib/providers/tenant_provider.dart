@@ -6,12 +6,15 @@ import '../models/tenant.dart';
 import '../services/firestore_service.dart';
 import 'room_provider.dart';
 
+enum TenantSortBy { name, paymentStatus, roomNumber }
+
 class TenantProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
   List<Tenant> _tenants = [];
   String _searchQuery = '';
   bool _isLoading = true;
   String? _userId;
+  TenantSortBy _sortBy = TenantSortBy.name;
   StreamSubscription<QuerySnapshot>? _tenantsSubscription;
 
   void _checkInitialization() {
@@ -20,13 +23,33 @@ class TenantProvider with ChangeNotifier {
     }
   }
 
-  List<Tenant> get tenants => _searchQuery.isEmpty 
-    ? _tenants 
-    : _tenants.where((tenant) => 
-        tenant.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-        tenant.roomId.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-        tenant.section.toLowerCase().contains(_searchQuery.toLowerCase())
-      ).toList();
+  TenantSortBy get sortBy => _sortBy;
+
+  List<Tenant> get tenants {
+    var filteredTenants = _searchQuery.isEmpty 
+      ? List<Tenant>.from(_tenants)
+      : _tenants.where((tenant) => 
+          tenant.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          tenant.roomId.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          tenant.section.toLowerCase().contains(_searchQuery.toLowerCase())
+        ).toList();
+
+    switch (_sortBy) {
+      case TenantSortBy.name:
+        filteredTenants.sort((a, b) => a.name.compareTo(b.name));
+      case TenantSortBy.paymentStatus:
+        filteredTenants.sort((a, b) {
+          // Custom sort order: Pending -> Partial -> Paid
+          final order = {'pending': 0, 'partial': 1, 'paid': 2};
+          return (order[a.paymentStatus.toLowerCase()] ?? 0)
+              .compareTo(order[b.paymentStatus.toLowerCase()] ?? 0);
+        });
+      case TenantSortBy.roomNumber:
+        filteredTenants.sort((a, b) => a.roomNumber.compareTo(b.roomNumber));
+    }
+    
+    return filteredTenants;
+  }
 
   bool get isLoading => _isLoading;
   bool get isInitialized => _userId != null;
@@ -203,6 +226,11 @@ class TenantProvider with ChangeNotifier {
 
   void clearSearchQuery() {
     _searchQuery = '';
+    notifyListeners();
+  }
+
+  void setSortBy(TenantSortBy sortBy) {
+    _sortBy = sortBy;
     notifyListeners();
   }
 

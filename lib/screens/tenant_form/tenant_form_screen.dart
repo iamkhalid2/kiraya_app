@@ -4,8 +4,15 @@ import 'widgets/tenant_form_content.dart';
 
 class TenantFormScreen extends StatelessWidget {
   final Tenant? tenant;
+  final String? preselectedRoomId;
+  final String? preselectedSection;
 
-  const TenantFormScreen({super.key, this.tenant});
+  const TenantFormScreen({
+    super.key, 
+    this.tenant,
+    this.preselectedRoomId,
+    this.preselectedSection,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +25,11 @@ class TenantFormScreen extends StatelessWidget {
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: TenantFormContent(tenant: tenant),
+          child: TenantFormContent(
+            tenant: tenant,
+            preselectedRoomId: preselectedRoomId,
+            preselectedSection: preselectedSection,
+          ),
         ),
       ),
     );
