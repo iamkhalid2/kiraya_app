@@ -295,10 +295,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Logout Button at the bottom
             ElevatedButton.icon(
               onPressed: _signOut,
-              icon: const Icon(Icons.logout),
+                icon: const Icon(Icons.logout, color: Colors.white),
               label: const Text('Sign Out'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: Colors.red.shade400,
                 foregroundColor: Colors.white,
                 minimumSize: const Size.fromHeight(50),
               ),

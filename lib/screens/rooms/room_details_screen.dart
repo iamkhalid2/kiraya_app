@@ -194,7 +194,7 @@ class RoomDetailsScreen extends StatelessWidget {
                                                 Text(
                                                   '₹${tenant.rentAmount}',
                                                   style: theme.textTheme.titleSmall?.copyWith(
-                                                    color: theme.primaryColor,
+                                                    color: theme.colorScheme.primary,
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                 ),

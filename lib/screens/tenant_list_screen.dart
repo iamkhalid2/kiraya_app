@@ -168,7 +168,7 @@ class _TenantListScreenState extends State<TenantListScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: Theme.of(context).colorScheme.surface,
                           contentPadding: EdgeInsets.zero,
                           isDense: true,
                         ),

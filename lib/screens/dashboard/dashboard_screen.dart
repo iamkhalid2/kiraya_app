@@ -89,7 +89,7 @@ class DashboardScreen extends StatelessWidget {
                 StaggeredGridTile.fit(
                   crossAxisCellCount: 1,
                   child: StatCard(
-                    title: 'Total Tenants',
+                    title: 'Tenants',
                     value: totalTenants.toDouble(),
                     icon: Icons.people,
                     color: theme.colorScheme.primary,
@@ -98,7 +98,7 @@ class DashboardScreen extends StatelessWidget {
                 StaggeredGridTile.fit(
                   crossAxisCellCount: 1,
                   child: StatCard(
-                    title: 'Monthly Income',
+                    title: 'Income',
                     value: monthlyIncome,
                     icon: Icons.attach_money,
                     color: theme.colorScheme.secondary,
@@ -108,7 +108,7 @@ class DashboardScreen extends StatelessWidget {
                 StaggeredGridTile.fit(
                   crossAxisCellCount: 1,
                   child: StatCard(
-                    title: 'Collection Rate',
+                    title: 'Collection %',
                     value: collectionRate,
                     icon: Icons.timeline,
                     color: theme.colorScheme.tertiary,
@@ -118,7 +118,7 @@ class DashboardScreen extends StatelessWidget {
                 StaggeredGridTile.fit(
                   crossAxisCellCount: 1,
                   child: StatCard(
-                    title: 'Vacancy Rate',
+                    title: 'Vacancy %',
                     value: vacancyRate,
                     icon: Icons.meeting_room,
                     color: theme.colorScheme.primary.withBlue(180),

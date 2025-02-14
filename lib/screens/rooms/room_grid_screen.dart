@@ -128,7 +128,7 @@ class _RoomGridScreenState extends State<RoomGridScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: Theme.of(context).colorScheme.surface,
                       contentPadding: EdgeInsets.zero,
                       isDense: true,
                     ),
