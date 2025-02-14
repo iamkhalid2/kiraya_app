@@ -5,7 +5,7 @@ import '../providers/navigation_provider.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'rooms/room_grid_screen.dart';
 import 'tenant_list_screen.dart';
-import 'settings/settings_screen.dart';
+import 'settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});

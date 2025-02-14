@@ -5,51 +5,57 @@ import '../models/user_settings.dart';
 
 class UserSettingsProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
-  UserSettings _settings = UserSettings();  // Start with default settings
+  UserSettings _settings = UserSettings();
   bool _isInitialized = false;
   bool _isLoading = false;
   String? _error;
   String? _userId;
 
   UserSettings get settings => _settings;
-  bool get isInitialized => _userId != null;
+  bool get isInitialized => _isInitialized;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
   Stream<DocumentSnapshot> get settingsStream => _firestoreService.userSettingsStream;
 
-  // Changed to sync initialization
   void initialize(String? userId) {
     if (userId == null) {
-      // Handle logout
-      _settings = UserSettings();  // Reset to defaults
-      _isInitialized = false;
-      _userId = null;
-      _error = null;
-      notifyListeners();
+      reset();
       return;
     }
 
-    if (_userId == userId && _isInitialized) return;
+    if (_userId == userId && _isInitialized) {
+      return;
+    }
 
     _userId = userId;
     _firestoreService.initialize(userId);
-    _settings = UserSettings();  // Start with defaults
+    _settings = UserSettings();
     _isInitialized = true;
     notifyListeners();
     
-    // Load settings in background
     _loadSettings();
   }
 
+  void reset() {
+    _settings = UserSettings();
+    _isInitialized = true; // Mark as initialized even when resetting
+    _userId = null;
+    _error = null;
+    _isLoading = false;
+    notifyListeners();
+  }
+
   Future<void> _loadSettings() async {
+    debugPrint('UserSettingsProvider: Loading settings...');
     _setLoading(true);
     try {
       final loadedSettings = await _firestoreService.getUserSettings();
+      debugPrint('UserSettingsProvider: Settings loaded: $loadedSettings');
       _settings = loadedSettings;
       _error = null;
     } catch (e) {
-      debugPrint('Error loading settings: $e');
+      debugPrint('UserSettingsProvider: Error loading settings: $e');
       _error = e.toString();
       // Keep using default settings on error
     } finally {

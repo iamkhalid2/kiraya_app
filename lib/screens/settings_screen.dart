@@ -123,92 +123,184 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.logout),
-                    onPressed: _signOut,
-                    tooltip: 'Sign Out',
-                  ),
                 ],
               ),
-              const SizedBox(height: 16),
             ],
           ),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // User Profile Card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Consumer<AuthProvider>(
+                  builder: (context, authProvider, _) {
+                    final user = authProvider.user;
+                    return Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundImage: user?.photoURL != null 
+                              ? NetworkImage(user!.photoURL!)
+                              : null,
+                          child: user?.photoURL == null 
+                              ? const Icon(Icons.person, size: 40)
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          user?.displayName ?? 'User',
+                          style: theme.textTheme.titleLarge,
+                        ),
+                        if (user?.email != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            user!.email!,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Room Management Card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.apartment_outlined, color: theme.colorScheme.primary),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Room Management',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Consumer<RoomProvider>(
+                        builder: (context, roomProvider, _) {
+                          final currentRoomCount = roomProvider.rooms.length;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              TextFormField(
+                                controller: _roomLimitController,
+                                decoration: InputDecoration(
+                                  labelText: 'Total Rooms Limit',
+                                  border: const OutlineInputBorder(),
+                                  helperText: 'Current room count: $currentRoomCount',
+                                  helperMaxLines: 2,
+                                  suffixIcon: const Tooltip(
+                                    message: 'Room limit cannot be less than current room count',
+                                    child: Icon(Icons.info_outline),
+                                  ),
+                                ),
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                enabled: !_isSubmitting,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter room limit';
+                                  }
+                                  final limit = int.tryParse(value);
+                                  if (limit == null || limit < 1) {
+                                    return 'Room limit must be at least 1';
+                                  }
+                                  if (limit < currentRoomCount) {
+                                    return 'Cannot set limit below current room count ($currentRoomCount).\nDelete some rooms first.';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _isSubmitting ? null : _saveSettings,
+                                child: _isSubmitting
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Text('Save Changes'),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Appearance Card 
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Room Management',
-                      style: theme.textTheme.titleLarge,
+                    Row(
+                      children: [
+                        Icon(Icons.palette_outlined, color: theme.colorScheme.primary),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Appearance',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
-                    Consumer<RoomProvider>(
-                      builder: (context, roomProvider, _) {
-                        final currentRoomCount = roomProvider.rooms.length;
-                        return TextFormField(
-                          controller: _roomLimitController,
-                          decoration: InputDecoration(
-                            labelText: 'Total Rooms Limit',
-                            border: const OutlineInputBorder(),
-                            helperText: 'Current room usage: $currentRoomCount room(s)',
-                            helperMaxLines: 2,
-                            suffixIcon: Tooltip(
-                              message: 'Room limit cannot be less than current room count',
-                              child: const Icon(Icons.info_outline),
-                            ),
-                          ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          enabled: !_isSubmitting,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter room limit';
-                            }
-                            final limit = int.tryParse(value);
-                            if (limit == null || limit < 1) {
-                              return 'Room limit must be at least 1';
-                            }
-                            if (limit > 100) {
-                              return 'Room limit cannot exceed 100';
-                            }
-                            if (limit < currentRoomCount) {
-                              return 'Cannot set limit below current room count ($currentRoomCount).\nDelete some rooms first.';
-                            }
-                            return null;
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isSubmitting ? null : _saveSettings,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(50),
-                          backgroundColor: theme.colorScheme.primary,
-                          foregroundColor: theme.colorScheme.onPrimary,
-                        ),
-                        child: _isSubmitting
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Text('Save Settings'),
+                    Consumer<UserSettingsProvider>(
+                      builder: (context, settings, _) => SwitchListTile(
+                        title: const Text('Dark Mode'),
+                        subtitle: const Text('Enable darker theme for better visibility at night'),
+                        value: settings.settings.enableDarkMode,
+                        onChanged: (value) {
+                          final newSettings = settings.settings.copyWith(enableDarkMode: value);
+                          settings.updateSettings(newSettings);
+                        },
                       ),
                     ),
                   ],
                 ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Logout Button at the bottom
+            ElevatedButton.icon(
+              onPressed: _signOut,
+              icon: const Icon(Icons.logout),
+              label: const Text('Sign Out'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(50),
               ),
             ),
           ],

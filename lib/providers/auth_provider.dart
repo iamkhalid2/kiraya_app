@@ -124,10 +124,17 @@ class AuthProvider with ChangeNotifier {
   Future<void> signOut() async {
     _setLoading(true);
     try {
+      // Sign out from Firebase and Google
       await Future.wait([
         _auth.signOut(),
         _googleSignIn.signOut(),
       ]);
+
+      // Reset initialization state
+      _isInitialized = false;
+      
+      // Notify listeners to trigger provider updates
+      notifyListeners();
     } catch (e) {
       throw _handleAuthError(e);
     } finally {
