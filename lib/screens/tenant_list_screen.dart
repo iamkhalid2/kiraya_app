@@ -19,6 +19,60 @@ class TenantListScreen extends StatefulWidget {
 class _TenantListScreenState extends State<TenantListScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  String _sortBy = 'name'; // Add this field
+
+  void _showSortOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Sort by Name'),
+              leading: const Icon(Icons.sort_by_alpha),
+              onTap: () {
+                setState(() => _sortBy = 'name');
+                Navigator.pop(context);
+              },
+              trailing: _sortBy == 'name' ? const Icon(Icons.check) : null,
+            ),
+            ListTile(
+              title: const Text('Sort by Due Date'),
+              leading: const Icon(Icons.calendar_today),
+              onTap: () {
+                setState(() => _sortBy = 'due_date');
+                Navigator.pop(context);
+              },
+              trailing: _sortBy == 'due_date' ? const Icon(Icons.check) : null,
+            ),
+            ListTile(
+              title: const Text('Sort by Payment Status'),
+              leading: const Icon(Icons.payments),
+              onTap: () {
+                setState(() => _sortBy = 'status');
+                Navigator.pop(context);
+              },
+              trailing: _sortBy == 'status' ? const Icon(Icons.check) : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Tenant> _sortTenants(List<Tenant> tenants) {
+    switch (_sortBy) {
+      case 'name':
+        return List.from(tenants)..sort((a, b) => a.name.compareTo(b.name));
+      case 'due_date':
+        return List.from(tenants)..sort((a, b) => a.nextDueDate.compareTo(b.nextDueDate));
+      case 'status':
+        return List.from(tenants)..sort((a, b) => b.paymentStatus.compareTo(a.paymentStatus));
+      default:
+        return tenants;
+    }
+  }
 
   @override
   void dispose() {
@@ -28,19 +82,18 @@ class _TenantListScreenState extends State<TenantListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Consumer2<AuthProvider, TenantProvider>(
       builder: (context, authProvider, tenantProvider, child) {
         if (!authProvider.isAuthenticated) {
-          return Scaffold(
-            appBar: _buildAppBar(context, 0),
-            body: const Center(child: Text('Please log in to view tenants')),
+          return const Scaffold(
+            body: Center(child: Text('Please log in to view tenants')),
           );
         }
 
         if (!tenantProvider.isInitialized) {
-          return Scaffold(
-            appBar: _buildAppBar(context, 0),
-            body: const Center(child: CircularProgressIndicator()),
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -53,167 +106,107 @@ class _TenantListScreenState extends State<TenantListScreen> {
                 tenant.paymentStatus.toLowerCase().contains(_searchQuery)).toList();
 
         return Scaffold(
-          appBar: _buildAppBar(context, tenants.length),
-          body: allTenants.isEmpty
-              ? _buildEmptyState()
-              : tenants.isEmpty
-                  ? _buildNoSearchResults()
-                  : ListView.builder(
-                      padding: const EdgeInsets.only(top: 8),
-                      itemCount: tenants.length,
-                      itemBuilder: (context, index) => _buildTenantCard(context, tenants[index]),
-                    ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const TenantFormScreen(),
-                ),
-              );
-            },
-            child: const Icon(Icons.person_add),
-          ),
-        );
-      },
-    );
-  }
-
-  PreferredSize _buildAppBar(BuildContext context, int tenantsCount) {
-    final theme = Theme.of(context);
-    
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(140),
-      child: Container(
-        color: theme.primaryColor.withOpacity(0.1),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Tenant Management',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.primaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '$tenantsCount Active Tenant${tenantsCount != 1 ? 's' : ''}',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: theme.primaryColor.withOpacity(0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (tenantsCount > 0)
-                      Container(
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Consumer<TenantProvider>(
-                          builder: (context, provider, _) => DropdownButtonHideUnderline(
-                            child: DropdownButton<TenantSortBy>(
-                              value: provider.sortBy,
-                              isDense: true,
-                              icon: const Icon(Icons.sort, size: 18),
-                              style: theme.textTheme.bodyMedium,
-                              items: [
-                                DropdownMenuItem(
-                                  value: TenantSortBy.name,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.sort_by_alpha, 
-                                        size: 16,
-                                        color: theme.primaryColor),
-                                      const SizedBox(width: 4),
-                                      Text('Name', style: theme.textTheme.bodyMedium),
-                                    ],
-                                  ),
-                                ),
-                                DropdownMenuItem(
-                                  value: TenantSortBy.paymentStatus,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.payment,
-                                        size: 16,
-                                        color: theme.primaryColor),
-                                      const SizedBox(width: 4),
-                                      Text('Status', style: theme.textTheme.bodyMedium),
-                                    ],
-                                  ),
-                                ),
-                                DropdownMenuItem(
-                                  value: TenantSortBy.roomNumber,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.meeting_room,
-                                        size: 16,
-                                        color: theme.primaryColor),
-                                      const SizedBox(width: 4),
-                                      Text('Room', style: theme.textTheme.bodyMedium),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                if (value != null) {
-                                  provider.setSortBy(value);
-                                }
-                              },
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(80),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Tenant Management',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${tenants.length} Active ${tenants.length == 1 ? 'Tenant' : 'Tenants'}',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: theme.colorScheme.primary.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
                       ),
+                      IconButton.filled(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TenantFormScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.add),
+                        tooltip: 'Add Tenant',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          body: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Search tenants...',
+                          prefixIcon: const Icon(Icons.search, size: 20),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: EdgeInsets.zero,
+                          isDense: true,
+                        ),
+                        style: theme.textTheme.bodyMedium,
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value.toLowerCase();
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      onPressed: _showSortOptions,
+                      icon: const Icon(Icons.sort, size: 20),
+                      tooltip: 'Sort tenants',
+                    ),
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: SizedBox(
-                  height: 44,
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search tenants...',
-                      hintStyle: theme.textTheme.bodyMedium,
-                      prefixIcon: const Icon(Icons.search, size: 20),
-                      border: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: EdgeInsets.zero,
-                      isDense: true,
-                    ),
-                    style: theme.textTheme.bodyMedium,
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value.toLowerCase();
-                      });
-                    },
-                  ),
-                ),
+              Expanded(
+                child: allTenants.isEmpty
+                    ? _buildEmptyState()
+                    : tenants.isEmpty
+                        ? _buildNoSearchResults()
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(top: 8),
+                            itemCount: tenants.length,
+                            itemBuilder: (context, index) {
+                              final sortedTenants = _sortTenants(tenants);
+                              return _buildTenantCard(context, sortedTenants[index]);
+                            },
+                          ),
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

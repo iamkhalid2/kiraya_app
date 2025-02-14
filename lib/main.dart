@@ -80,13 +80,14 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.light,
         ),
         useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
+        appBarTheme: AppBarTheme(
+          centerTitle: false,
           elevation: 0,
-          backgroundColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+          backgroundColor: const Color(0xFF1976D2).withOpacity(0.1),
           foregroundColor: Colors.black87,
-          titleTextStyle: TextStyle(
-            fontSize: 20,
+          titleTextStyle: const TextStyle(
+            fontSize: 24,
             fontWeight: FontWeight.bold,
             color: Colors.black87,
           ),

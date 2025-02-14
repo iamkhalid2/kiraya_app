@@ -131,6 +131,7 @@ class TenantDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Consumer<TenantProvider>(
       builder: (context, tenantProvider, _) {
         final tenant = tenantProvider.tenants.firstWhere(
@@ -156,59 +157,70 @@ class TenantDetailsScreen extends StatelessWidget {
         }
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Tenant Details'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => TenantFormScreen(tenant: tenant),
-                    ),
-                  );
-                },
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(120),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            tenant.name,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Consumer<RoomProvider>(
+                            builder: (context, roomProvider, _) {
+                              final room = roomProvider.rooms.firstWhere(
+                                (room) => room.id == tenant.roomId,
+                                orElse: () => Room(number: 'Unknown', occupantLimit: 0),
+                              );
+                              return Text(
+                                'Room ${room.number} - Section ${tenant.section}',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: theme.colorScheme.primary.withOpacity(0.8),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => TenantFormScreen(tenant: tenant),
+                                ),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () => _showDeleteConfirmation(context, tenant),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
               ),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => _showDeleteConfirmation(context, tenant),
-              ),
-            ],
+            ),
           ),
           body: SingleChildScrollView(
             child: Column(
               children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                  child: Column(
-                    children: [
-                      const CircleAvatar(
-                        radius: 50,
-                        child: Icon(Icons.person, size: 50),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        tenant.name,
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Consumer<RoomProvider>(
-                        builder: (context, roomProvider, _) {
-                          final room = roomProvider.rooms.firstWhere(
-                            (room) => room.id == tenant.roomId,
-                            orElse: () => Room(number: 'Unknown', occupantLimit: 0),
-                          );
-                          return Text(
-                            'Room ${room.number} - Section ${tenant.section}',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
                 Card(
                   margin: const EdgeInsets.all(16),
                   child: Padding(
@@ -228,7 +240,8 @@ class TenantDetailsScreen extends StatelessWidget {
                         ),
                         if (tenant.paymentStatus.toLowerCase() != 'paid') ...[
                           const Divider(),
-                          Center(
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             child: SizedBox(
                               width: double.infinity,
                               child: ElevatedButton.icon(
@@ -236,6 +249,7 @@ class TenantDetailsScreen extends StatelessWidget {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.green,
                                   foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
                                 ),
                                 icon: const Icon(Icons.check_circle),
                                 label: const Text('Mark as Paid'),

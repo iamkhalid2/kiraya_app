@@ -4,7 +4,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../providers/tenant_provider.dart';
 import '../../providers/room_provider.dart';
-import '../../providers/user_settings_provider.dart';
 import '../../services/stats_service.dart';
 import 'widgets/stat_card.dart';
 
@@ -45,7 +44,6 @@ class DashboardScreen extends StatelessWidget {
         preferredSize: const Size.fromHeight(120),
         child: Container(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          color: theme.primaryColor.withOpacity(0.1),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -59,14 +57,13 @@ class DashboardScreen extends StatelessWidget {
                         'Property Dashboard',
                         style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: theme.primaryColor,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Analytics & Overview',
                         style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.primaryColor.withOpacity(0.8),
+                          color: theme.colorScheme.primary.withOpacity(0.8),
                         ),
                       ),
                     ],

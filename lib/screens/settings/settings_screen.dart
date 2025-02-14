@@ -74,12 +74,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(120),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          color: Theme.of(context).primaryColor.withOpacity(0.1),
+          padding: const EdgeInsets.fromLTRB(16, 48, 16, 0),
+          color: Theme.of(context).appBarTheme.backgroundColor,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -91,16 +92,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       Text(
                         'Settings',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Configure Your Property',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).primaryColor.withOpacity(0.8),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.primary.withOpacity(0.8),
                         ),
                       ),
                     ],
