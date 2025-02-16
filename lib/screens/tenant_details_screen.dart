@@ -54,10 +54,16 @@ class TenantDetailsScreen extends StatelessWidget {
     try {
       final tenantProvider = Provider.of<TenantProvider>(context, listen: false);
       final now = DateTime.now();
+      
+      // Calculate next due date based on the tenant's joining day
+      final nextDueDate = now.day > tenant.joiningDate.day
+          ? DateTime(now.year, now.month + 1, tenant.joiningDate.day)  // Next month if we've passed the day
+          : DateTime(now.year, now.month, tenant.joiningDate.day);     // This month if we haven't reached the day yet
+
       final updatedTenant = tenant.copyWith(
         paymentStatus: 'Paid',
         paidAmount: null, // Clear partial payment amount
-        nextDueDate: DateTime(now.year, now.month + 1, now.day), // Set next due date to one month from now
+        nextDueDate: nextDueDate,
       );
 
       await tenantProvider.updateTenant(context, updatedTenant);

@@ -123,11 +123,12 @@ class TenantFormContentState extends State<TenantFormContent> {
   }
 
   Tenant _createTenant() {
-    // Calculate next due date based on current date if tenant joined more than a month ago
     final now = DateTime.now();
-    final nextDueDate = _joiningDate.isAfter(DateTime(now.year, now.month - 1, now.day))
-        ? DateTime(_joiningDate.year, _joiningDate.month + 1, _joiningDate.day)
-        : DateTime(now.year, now.month + 1, now.day);
+    
+    // Calculate the next due date by finding the next occurrence of the joining day
+    final nextDueDate = now.day > _joiningDate.day
+        ? DateTime(now.year, now.month + 1, _joiningDate.day)  // Next month if we've passed the day
+        : DateTime(now.year, now.month, _joiningDate.day);     // This month if we haven't reached the day yet
 
     return Tenant(
       id: widget.tenant?.id,

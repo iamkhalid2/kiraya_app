@@ -7,11 +7,18 @@ class StatsService {
   }
 
   static double getTotalMonthlyIncome(List<Tenant> tenants) {
+    final now = DateTime.now();
+    final currentMonthStart = DateTime(now.year, now.month, 1);
+    
     return tenants.fold(0.0, (sum, tenant) {
-      if (tenant.paymentStatus.toLowerCase() == 'paid') {
-        return sum + tenant.rentAmount;
-      } else if (tenant.paymentStatus.toLowerCase() == 'partial' && tenant.paidAmount != null) {
-        return sum + tenant.paidAmount!;
+      // Only count payments made this month (from 1st to today)
+      if (tenant.nextDueDate.isAfter(currentMonthStart) && 
+          tenant.nextDueDate.isBefore(now.add(const Duration(days: 1)))) {
+        if (tenant.paymentStatus.toLowerCase() == 'paid') {
+          return sum + tenant.rentAmount;
+        } else if (tenant.paymentStatus.toLowerCase() == 'partial' && tenant.paidAmount != null) {
+          return sum + tenant.paidAmount!;
+        }
       }
       return sum;
     });
@@ -85,32 +92,26 @@ class StatsService {
 
     // Initialize last N months with 0
     for (var i = 0; i < months; i++) {
-      final month = DateTime(now.year, now.month - i);
+      final month = DateTime(now.year, now.month - i, 1);
       history[month] = 0;
     }
 
     // Calculate revenue for each month
     for (var tenant in tenants) {
-      // For paid tenants, add full rent amount
-      if (tenant.paymentStatus.toLowerCase() == 'paid') {
+      if (tenant.paymentStatus.toLowerCase() == 'paid' || 
+          (tenant.paymentStatus.toLowerCase() == 'partial' && tenant.paidAmount != null)) {
+        // Due date is always next month, so payment was for previous month
         final paymentMonth = DateTime(
-          tenant.nextDueDate.year, 
+          tenant.nextDueDate.year,
           tenant.nextDueDate.month - 1,
+          1
         );
         
         if (history.containsKey(paymentMonth)) {
-          history[paymentMonth] = (history[paymentMonth] ?? 0) + tenant.rentAmount;
-        }
-      } 
-      // For partial payments, only add the paid amount
-      else if (tenant.paymentStatus.toLowerCase() == 'partial' && tenant.paidAmount != null) {
-        final paymentMonth = DateTime(
-          tenant.nextDueDate.year, 
-          tenant.nextDueDate.month - 1,
-        );
-        
-        if (history.containsKey(paymentMonth)) {
-          history[paymentMonth] = (history[paymentMonth] ?? 0) + tenant.paidAmount!;
+          final amount = tenant.paymentStatus.toLowerCase() == 'paid' 
+              ? tenant.rentAmount 
+              : tenant.paidAmount!;
+          history[paymentMonth] = (history[paymentMonth] ?? 0) + amount;
         }
       }
     }
