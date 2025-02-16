@@ -123,6 +123,12 @@ class TenantFormContentState extends State<TenantFormContent> {
   }
 
   Tenant _createTenant() {
+    // Calculate next due date based on current date if tenant joined more than a month ago
+    final now = DateTime.now();
+    final nextDueDate = _joiningDate.isAfter(DateTime(now.year, now.month - 1, now.day))
+        ? DateTime(_joiningDate.year, _joiningDate.month + 1, _joiningDate.day)
+        : DateTime(now.year, now.month + 1, now.day);
+
     return Tenant(
       id: widget.tenant?.id,
       name: _nameController.text,
@@ -133,7 +139,7 @@ class TenantFormContentState extends State<TenantFormContent> {
       paymentStatus: _paymentStatus,
       phoneNumber: _phoneNumberController.text,
       joiningDate: _joiningDate,
-      nextDueDate: DateTime(_joiningDate.year, _joiningDate.month + 1, _joiningDate.day),
+      nextDueDate: nextDueDate,
       kycImage1: _kycImage1,
       kycImage2: _kycImage2,
       paidAmount: _paymentStatus.toLowerCase() == 'partial' ? _paidAmount : null,

@@ -251,7 +251,7 @@ class TenantDetailsScreen extends StatelessWidget {
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(vertical: 12),
                                 ),
-                                icon: const Icon(Icons.check_circle),
+                                icon: const Icon(Icons.check_circle, color: Colors.white),
                                 label: const Text('Mark as Paid'),
                               ),
                             ),

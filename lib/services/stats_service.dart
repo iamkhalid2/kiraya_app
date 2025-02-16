@@ -79,7 +79,7 @@ class StatsService {
     return ((totalSections - occupiedSections) / totalSections) * 100;
   }
 
-  static List<MapEntry<DateTime, double>> getRevenueHistory(List<Tenant> tenants, {int months = 6}) {
+  static List<MapEntry<DateTime, double>> getRevenueHistory(List<Tenant> tenants, {int months = 12}) {
     final history = <DateTime, double>{};
     final now = DateTime.now();
 

@@ -135,7 +135,7 @@ class DashboardScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Revenue History',
+                      'Revenue TTM',
                       style: theme.textTheme.titleLarge,
                     ),
                     const SizedBox(height: 16),
@@ -166,25 +166,19 @@ class DashboardScreen extends StatelessWidget {
                             bottomTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
-                                reservedSize: 30,
+                                reservedSize: 20,
                                 interval: 1,
                                 getTitlesWidget: (value, meta) {
-                                  if (value.toInt() >=
-                                      revenueHistory.length) {
+                                  if (value.toInt() >= revenueHistory.length) {
                                     return const Text('');
                                   }
-                                  final date =
-                                      revenueHistory[value.toInt()].key;
-                                  return Transform.rotate(
-                                    angle: -0.5,
-                                    child: Text(
-                                      '${date.month}/${date.year}',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        color:
-                                            theme.colorScheme.onSurface,
-                                      ),
+                                  final date = revenueHistory[value.toInt()].key;
+                                  return Text(
+                                    '${date.month}',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.onSurface,
                                     ),
                                   );
                                 },
@@ -222,6 +216,7 @@ class DashboardScreen extends StatelessWidget {
                                 ),
                               ),
                               isCurved: true,
+                              curveSmoothness: 0.1,
                               color: theme.colorScheme.primary,
                               barWidth: 3,
                               dotData: FlDotData(

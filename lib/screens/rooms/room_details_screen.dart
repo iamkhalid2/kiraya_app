@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/room.dart';
+import '../../providers/room_provider.dart';
 import '../../providers/tenant_provider.dart';
 import '../tenant_details_screen.dart';
 import '../tenant_form/tenant_form_screen.dart';
@@ -30,6 +31,47 @@ class RoomDetailsScreen extends StatelessWidget {
           preselectedRoomId: roomId,
           preselectedSection: sectionId,
         ),
+      ),
+    );
+  }
+
+  Future<void> _showDeleteConfirmation(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Room'),
+        content: const Text(
+          'Are you sure you want to delete this room? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () async {
+              try {
+                Navigator.of(ctx).pop();
+                await Provider.of<RoomProvider>(context, listen: false)
+                    .deleteRoom(room.id!);
+                if (context.mounted) {
+                  Navigator.of(context).pop(); // Pop room details screen
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('DELETE'),
+          ),
+        ],
       ),
     );
   }
@@ -67,32 +109,44 @@ class RoomDetailsScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: room.isFull 
-                          ? Colors.orange.withOpacity(0.1) 
-                          : Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          room.isFull ? Icons.person_off : Icons.person_add,
-                          size: 16,
-                          color: room.isFull ? Colors.orange : Colors.green,
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: room.isFull 
+                              ? Colors.orange.withOpacity(0.1) 
+                              : Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${room.occupiedCount}/${room.occupantLimit}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: room.isFull ? Colors.orange : Colors.green,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              room.isFull ? Icons.person_off : Icons.person_add,
+                              size: 16,
+                              color: room.isFull ? Colors.orange : Colors.green,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${room.occupiedCount}/${room.occupantLimit}',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: room.isFull ? Colors.orange : Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (room.isEmpty) ...[
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _showDeleteConfirmation(context),
+                          tooltip: 'Delete Room',
                         ),
                       ],
-                    ),
+                    ],
                   ),
                 ],
               ),
