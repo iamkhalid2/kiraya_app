@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 import 'main_screen.dart';
 
@@ -9,9 +8,11 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
-        if (authProvider.isLoading) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Only show loading screen during initial app load
           return const Scaffold(
             body: Center(
               child: CircularProgressIndicator(),
@@ -19,11 +20,11 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        if (authProvider.isAuthenticated) {
+        if (snapshot.hasData) {
           return const MainScreen();
-        } else {
-          return const LoginScreen();
         }
+
+        return const LoginScreen();
       },
     );
   }
