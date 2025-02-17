@@ -2,6 +2,8 @@
 
 A modern Flutter application for managing rental properties, tenants, and rent collection. Built with Firebase backend for real-time data synchronization and secure authentication.
 
+https://play.google.com/store/apps/details?id=dev.mkhalid.kiraya
+
 ## ✨ Features
 
 ### Authentication
