@@ -23,6 +23,9 @@ class StatsService {
       return sum;
     });
   }
+ 
+    // Add a button to the dashboard to view the full report
+
 
   static double getCollectionRate(List<Tenant> tenants) {
     if (tenants.isEmpty) return 0.0;
