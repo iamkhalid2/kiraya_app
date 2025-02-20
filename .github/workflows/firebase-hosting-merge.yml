@@ -14,13 +14,13 @@ jobs:
       
       - uses: subosito/flutter-action@v2
         with:
-        flutter-version: '3.27.0'
-        
+          flutter-version: '3.27.0'
+
       - run: flutter pub get
       
       - run: flutter build web --release
       
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      - uses: FirebaseExtended/action-hosting-deploy@v1
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KIRAYA_8948A }}
