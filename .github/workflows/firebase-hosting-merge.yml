@@ -19,6 +19,28 @@ jobs:
           flutter-version: '3.27.0'
           channel: 'stable'
       
+      # Generate minimal firebase.json for hosting
+      - name: Create Firebase config
+        run: |
+          cat > firebase.json << 'EOL'
+          {
+            "hosting": {
+              "public": "build/web",
+              "ignore": [
+                "firebase.json",
+                "**/.*",
+                "**/node_modules/**"
+              ],
+              "rewrites": [
+                {
+                  "source": "**",
+                  "destination": "/index.html"
+                }
+              ]
+            }
+          }
+          EOL
+      
       # Remove existing firebase_options.dart if it exists
       - name: Remove existing firebase_options.dart
         run: rm -f lib/firebase_options.dart
