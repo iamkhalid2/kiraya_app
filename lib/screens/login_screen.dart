@@ -110,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 24),
                   // Subheading
                   Text(
-                    'Rent Management Made Easy!',
+                    'Property Management Made Easy!',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
