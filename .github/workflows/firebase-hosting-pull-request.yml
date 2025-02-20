@@ -21,6 +21,10 @@ jobs:
           flutter-version: '3.27.0'
           channel: 'stable'
       
+      # Remove existing firebase_options.dart if it exists
+      - name: Remove existing firebase_options.dart
+        run: rm -f lib/firebase_options.dart
+      
       # Generate firebase_options.dart
       - name: Generate Firebase Options
         run: |
@@ -53,6 +57,10 @@ jobs:
             );
           }
           EOL
+
+      # Verify firebase_options.dart content
+      - name: Verify Firebase Options
+        run: cat lib/firebase_options.dart
 
       # Get dependencies
       - name: Get dependencies
