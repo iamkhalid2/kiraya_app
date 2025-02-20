@@ -39,6 +39,11 @@ dev_dependencies:
   flutter_lints: ^2.0.0
   build_runner: ^2.4.7
   flutter_launcher_icons: ^0.13.1
+  mockito: ^5.4.4
+  firebase_auth_mocks: ^0.13.0
+  google_sign_in_mocks: ^0.3.0
+  fake_cloud_firestore: ^2.4.8
+  network_image_mock: ^2.1.1
 
 flutter:
   uses-material-design: true
